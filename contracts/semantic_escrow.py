@@ -127,7 +127,7 @@ def is_digest(s) -> bool:
 def normalize_url(url):
     fail_unless(isinstance(url, str) and 9 <= len(url) <= 256
                 and url.startswith("https://"), "only HTTPS URLs")
-    fail_unless(all(33 <= ord(c) <= 126 and c != "\\" for c in url)
+    fail_unless(all(33 <= ord(c) <= 126 and c != "\" for c in url)
                 and "#" not in url, "unsafe URL characters")
     rest = url[8:]
     cut = min([v for v in [rest.find("/"), rest.find("?")] if v >= 0] or [len(rest)])
@@ -193,7 +193,7 @@ def verdict_prompt(criteria, verified):
         "Use ONLY frozen ordered rubric items. Unknown if proof is ambiguous. "
         "The presence of two matching hashes does not establish publisher independence.\n"
         "RUBRIC " + canonical(criteria) + "\nEVIDENCE\n" + "\n".join(lines)
-        + "\nReturn JSON only: {\\"labels\\":[\\"PASS|FAIL|UNKNOWN\\", ...]}. "
+        + "\nReturn JSON only: {\"labels\":[\"PASS|FAIL|UNKNOWN\", ...]}. "
         "The labels list must contain exactly one label for each ordered rubric item; "
         "PASS means supported by direct evidence, FAIL means directly contradicted, "
         "otherwise UNKNOWN. No extra fields."
