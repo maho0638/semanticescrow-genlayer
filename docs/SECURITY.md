@@ -11,7 +11,7 @@ Buyer deposit, locked milestone balances, seller payout, buyer refund, frozen ru
 3. Each milestone has **at most one** terminal settlement intent; `settle` cannot schedule transfer twice on retry, appeal, duplicate call or reorg/undetermined retry.
 4. Non-deterministic web/LLM execution performs **zero storage writes or message emission**; only consensus-accepted structured results may change application state.
 5. A transfer may be scheduled only with protocol finalization semantics, never on `accepted`; intent is not proof of receipt. **No blind failed-transfer retries** or unsupported claim of automatic refund.
-6. Criteria, amounts, beneficiaries, deadlines and initial manifest commitments cannot be edited post-creation; challenge can only add evidence, not replace criteria.
+6. The domain-separated terms hash must cover chain ID, contract address, both parties, buyer nonce, descriptions, criteria, amounts and deadlines; none can be edited post-creation; challenge can only add evidence, not replace criteria.
 7. Unsupported, unavailable, malformed, contradictory or under-quorum evidence **never triggers payment**; refund on an explicit agreed expiry condition is a separate deterministic policy.
 8. Unauthorised address cannot submit seller proof, challenge a verdict, confirm its own cancellation, edit records or transfer value. Any user can invoke already-earned expiry settlement without selecting beneficiaries.
 9. Never use live user wallet secrets or escrow funds for test scaffolding; keep Studio/local fixtures and Studio Dev independent from public chain proofs.
