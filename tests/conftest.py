@@ -65,6 +65,7 @@ def _patch_nondet_for_current_sdk(vm):
 
     direct_nondet.lazy = lazy_nondet
     vm.run_nondet = direct_nondet
+    vm.run_nondet_unsafe = direct_nondet
     vm._gltest_direct_mode_patched = True
 
 
