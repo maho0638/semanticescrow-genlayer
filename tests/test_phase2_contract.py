@@ -154,8 +154,8 @@ def test_no_early_settlement_or_unilateral_cancel(direct_vm,direct_deploy):
     assert json.loads(c.get_ledger(idx))["remaining_locked"]=="50"
 
 def mock_evidence(vm, labels):
-    vm.mock_web(r"proof-a\\.example",{"status":200,"body":BODY_A.decode()})
-    vm.mock_web(r"proof-b\\.example",{"status":200,"body":BODY_B.decode()})
+    vm.mock_web(r"proof-a\.example",{"status":200,"body":BODY_A.decode()})
+    vm.mock_web(r"proof-b\.example",{"status":200,"body":BODY_B.decode()})
     vm.mock_llm(r"evidence auditor",json.dumps({"labels":labels}))
 
 
@@ -213,8 +213,8 @@ def test_buyer_challenge_cannot_be_repeated(direct_vm,direct_deploy):
 
 def test_unavailable_source_does_not_commit_verdict(direct_vm,direct_deploy):
     c,idx=submitted(direct_vm,direct_deploy)
-    direct_vm.mock_web(r"proof-a\\.example",{"status":503,"body":""})
-    direct_vm.mock_web(r"proof-b\\.example",{"status":503,"body":""})
+    direct_vm.mock_web(r"proof-a\.example",{"status":503,"body":""})
+    direct_vm.mock_web(r"proof-b\.example",{"status":503,"body":""})
     with direct_vm.expect_revert("unavailable evidence; retry"):
         c.assess(idx)
     assert json.loads(c.get_milestone(idx,0))["state"]=="SUBMITTED"
