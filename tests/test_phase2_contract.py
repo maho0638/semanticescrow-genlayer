@@ -260,6 +260,6 @@ def test_successful_assessment_waits_then_advances_one_milestone(direct_vm,direc
     assert led["remaining_locked"]=="30"
     assert json.loads(c.get_milestone(idx,0))["state"]=="PAYOUT_QUEUED"
     assert json.loads(c.get_milestone(idx,1))["state"]=="AWAITING_DELIVERY"
-    with direct_vm.expect_revert("submission not available"):
-        direct_vm.sender=SELLER
-        c.submit_evidence(idx,manifest((A,BODY_A),(B,BODY_B)))
+    direct_vm.sender=SELLER
+    c.submit_evidence(idx,manifest((A,BODY_A),(B,BODY_B)))
+    assert json.loads(c.get_milestone(idx,1))["state"]=="SUBMITTED"
