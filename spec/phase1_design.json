@@ -1,0 +1,217 @@
+{
+  "name": "SemanticEscrow",
+  "version": "1.0.0-design",
+  "scope": "PHASE1_ONLY",
+  "denomination": "GEN_WEI_U256",
+  "limits": {
+    "milestones_min": 1,
+    "milestones_max": 5,
+    "criteria_utf8_bytes_max": 2048,
+    "evidence_entries_min": 2,
+    "evidence_entries_max": 5,
+    "evidence_raw_bytes_max": 6000,
+    "initial_delivery_min_sec": 86400,
+    "delivery_max_horizon_sec": 31536000,
+    "submit_grace_sec": 172800,
+    "review_ttl_sec": 604800,
+    "challenge_ttl_sec": 172800,
+    "challenge_review_ttl_sec": 604800,
+    "contract_challenges_per_milestone": 1
+  },
+  "statuses": [
+    "WAITING",
+    "AWAITING_DELIVERY",
+    "SUBMITTED",
+    "APPROVE_PENDING",
+    "REJECT_PENDING",
+    "CHALLENGED",
+    "CHALLENGE_APPROVE_PENDING",
+    "CHALLENGE_REJECT_PENDING",
+    "PAYOUT_QUEUED",
+    "REFUND_QUEUED",
+    "CANCELED_REFUNDED_QUEUED"
+  ],
+  "decisions": [
+    "APPROVED",
+    "REJECTED",
+    "INCONCLUSIVE",
+    "UNAVAILABLE"
+  ],
+  "actions": {
+    "create_deal": {
+      "from": [],
+      "to": "AWAITING_DELIVERY",
+      "role": "buyer",
+      "money": "LOCK_EXACT_DEPOSIT"
+    },
+    "submit_evidence": {
+      "from": [
+        "AWAITING_DELIVERY"
+      ],
+      "to": "SUBMITTED",
+      "role": "seller",
+      "guard": "now<due+172800",
+      "money": "NONE"
+    },
+    "assess_approved": {
+      "from": [
+        "SUBMITTED"
+      ],
+      "to": "APPROVE_PENDING",
+      "role": "buyer_or_seller",
+      "guard": "now<submitted+604800",
+      "money": "NONE"
+    },
+    "assess_rejected": {
+      "from": [
+        "SUBMITTED"
+      ],
+      "to": "REJECT_PENDING",
+      "role": "buyer_or_seller",
+      "guard": "now<submitted+604800",
+      "money": "NONE"
+    },
+    "assess_inconclusive": {
+      "from": [
+        "SUBMITTED"
+      ],
+      "to": "SUBMITTED",
+      "role": "buyer_or_seller",
+      "guard": "now<submitted+604800",
+      "money": "NONE"
+    },
+    "timeout_unsubmitted": {
+      "from": [
+        "AWAITING_DELIVERY"
+      ],
+      "to": "REFUND_QUEUED",
+      "role": "anyone",
+      "guard": "now>=due+172800",
+      "money": "REFUND_ALL_REMAINING"
+    },
+    "timeout_unassessed": {
+      "from": [
+        "SUBMITTED"
+      ],
+      "to": "REFUND_QUEUED",
+      "role": "anyone",
+      "guard": "now>=submitted+604800",
+      "money": "REFUND_ALL_REMAINING"
+    },
+    "challenge_approval": {
+      "from": [
+        "APPROVE_PENDING"
+      ],
+      "to": "CHALLENGED",
+      "role": "buyer",
+      "guard": "now<assessed+172800;unique_supplement",
+      "money": "NONE"
+    },
+    "challenge_rejection": {
+      "from": [
+        "REJECT_PENDING"
+      ],
+      "to": "CHALLENGED",
+      "role": "seller",
+      "guard": "now<assessed+172800;unique_supplement",
+      "money": "NONE"
+    },
+    "settle_approved": {
+      "from": [
+        "APPROVE_PENDING"
+      ],
+      "to": "PAYOUT_QUEUED",
+      "role": "anyone",
+      "guard": "now>=assessed+172800",
+      "money": "PAYOUT_CURRENT"
+    },
+    "settle_rejected": {
+      "from": [
+        "REJECT_PENDING"
+      ],
+      "to": "REFUND_QUEUED",
+      "role": "anyone",
+      "guard": "now>=assessed+172800",
+      "money": "REFUND_ALL_REMAINING"
+    },
+    "reassess_approved": {
+      "from": [
+        "CHALLENGED"
+      ],
+      "to": "CHALLENGE_APPROVE_PENDING",
+      "role": "buyer_or_seller",
+      "guard": "now<challenged+604800",
+      "money": "NONE"
+    },
+    "reassess_rejected": {
+      "from": [
+        "CHALLENGED"
+      ],
+      "to": "CHALLENGE_REJECT_PENDING",
+      "role": "buyer_or_seller",
+      "guard": "now<challenged+604800",
+      "money": "NONE"
+    },
+    "reassess_inconclusive": {
+      "from": [
+        "CHALLENGED"
+      ],
+      "to": "CHALLENGED",
+      "role": "buyer_or_seller",
+      "guard": "now<challenged+604800",
+      "money": "NONE"
+    },
+    "settle_challenge_approved": {
+      "from": [
+        "CHALLENGE_APPROVE_PENDING"
+      ],
+      "to": "PAYOUT_QUEUED",
+      "role": "anyone",
+      "guard": "challenge_consumed",
+      "money": "PAYOUT_CURRENT"
+    },
+    "settle_challenge_rejected": {
+      "from": [
+        "CHALLENGE_REJECT_PENDING"
+      ],
+      "to": "REFUND_QUEUED",
+      "role": "anyone",
+      "guard": "challenge_consumed",
+      "money": "REFUND_ALL_REMAINING"
+    },
+    "timeout_challenge_original_approved": {
+      "from": [
+        "CHALLENGED"
+      ],
+      "to": "PAYOUT_QUEUED",
+      "role": "anyone",
+      "guard": "now>=challenged+604800;initial=APPROVED",
+      "money": "PAYOUT_CURRENT"
+    },
+    "timeout_challenge_original_rejected": {
+      "from": [
+        "CHALLENGED"
+      ],
+      "to": "REFUND_QUEUED",
+      "role": "anyone",
+      "guard": "now>=challenged+604800;initial=REJECTED",
+      "money": "REFUND_ALL_REMAINING"
+    }
+  },
+  "terminal": [
+    "PAYOUT_QUEUED",
+    "REFUND_QUEUED",
+    "CANCELED_REFUNDED_QUEUED"
+  ],
+  "invariants": [
+    "deposit=remaining_locked+payout_queued_total+refund_queued_total",
+    "no_double_settlement",
+    "immutable_roles_terms",
+    "no_outbound_before_protocol_finalized",
+    "consensus_state_writes_only_after_nondet",
+    "queued_transfer_not_recipient_credit",
+    "no_unilateral_cancel",
+    "no_cross_deal_ledger_moves"
+  ],
+  "caution": "Design graph excludes overlay mutual-cancel handshake; specified separately in STATE_MACHINE.md. Graph checks are static design only."
+}
