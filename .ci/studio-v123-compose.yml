@@ -1,0 +1,117 @@
+# Separate, disposable GitHub-hosted Ubuntu runner: no external wallets, no user Docker.
+name: se123ci
+x-db: &db
+  DBHOST: postgres
+  DBPORT: "5432"
+  DBUSER: postgres
+  DBPASSWORD: "se123_ci_ephemeral"
+  DBNAME: genlayer_state
+x-runtime: &runtime
+  <<: *db
+  PYTHONUNBUFFERED: "1"
+  LOG_LEVEL: "info"
+  LOGCONFIG: "dev"
+  REDIS_URL: "redis://redis:6379/0"
+  WEBDRIVERHOST: webdriver
+  WEBDRIVERPORT: "5001"
+  GENVMROOT: /genvm
+  GENVM_BIN: /genvm/bin
+  RPCPORT: "4000"
+  JSONRPC_SERVER_URL: "http://jsonrpc:4000"
+  GENLAYER_CHAIN_ID: "61127"
+  DEFAULT_NUM_INITIAL_VALIDATORS: "5"
+  DEFAULT_CONSENSUS_MAX_ROTATIONS: "3"
+  VITE_FINALITY_WINDOW: "30"
+  VITE_FINALITY_WINDOW_APPEAL_FAILED_REDUCTION: "0.2"
+  VITE_MAX_ROTATIONS: "3"
+  SHOW_VALIDATOR_PRIVATE_KEYS_IN_LOGS: "false"
+  SHOW_VALIDATOR_PRIVATE_KEYS_IN_RPC: "false"
+  VALIDATORS_CONFIG_JSON: '[{"stake":1,"provider":"openai","model":"gpt-4o","amount":5}]'
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "se123_ci_ephemeral"
+      POSTGRES_DB: genlayer_state
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U postgres -d genlayer_state"]
+      interval: 10s
+      timeout: 4s
+      retries: 12
+    restart: "no"
+  redis:
+    image: redis:8-alpine
+    command: ["redis-server","--save","","--appendonly","no"]
+    healthcheck:
+      test: [CMD,"redis-cli","ping"]
+      interval: 6s
+      timeout: 3s
+      retries: 12
+    restart: "no"
+  webdriver:
+    image: yeagerai/genlayer-genvm-webdriver:0.0.9
+    environment:
+      PORT: "5001"
+    shm_size: 2gb
+    # This image returns 404 from GET /health. TCP-only readiness is the correct bootstrap gate.
+    healthcheck:
+      test: [CMD,"bash","-c","</dev/tcp/127.0.0.1/5001"]
+      interval: 12s
+      timeout: 8s
+      retries: 20
+      start_period: 35s
+    restart: "no"
+  database-migration:
+    image: yeagerai/simulator-database-migration:v0.123.0-rc.7
+    environment: *db
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+  jsonrpc:
+    image: yeagerai/simulator-jsonrpc:v0.123.0-rc.7
+    ports:
+      - "127.0.0.1:4000:4000"
+    environment:
+      <<: *runtime
+      WEB_CONCURRENCY: "1"
+      VITE_GENLAYER_NETWORK: localnet
+      VITE_CHAIN_ID: "61127"
+      VITE_IS_HOSTED: "false"
+    depends_on:
+      database-migration:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+      webdriver:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD,"curl","-f","http://localhost:4000/health"]
+      interval: 12s
+      timeout: 8s
+      retries: 20
+      start_period: 240s
+    restart: "no"
+  consensus-worker:
+    image: yeagerai/simulator-consensus-worker:v0.123.0-rc.7
+    environment:
+      <<: *runtime
+      WORKER_PORT: "4001"
+      WORKER_POLL_INTERVAL: "3"
+      TRANSACTION_TIMEOUT_MINUTES: "12"
+      MAX_PARALLEL_TXS_PER_WORKER: "1"
+    depends_on:
+      database-migration:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+      jsonrpc:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD,"curl","-f","http://localhost:4001/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 14
+      start_period: 240s
+    restart: "no"
