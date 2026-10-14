@@ -152,3 +152,70 @@ def test_no_early_settlement_or_unilateral_cancel(direct_vm,direct_deploy):
     with direct_vm.expect_revert("counterparty confirmation required"):
         c.confirm_cancel(idx)
     assert json.loads(c.get_ledger(idx))["remaining_locked"]=="50"
+
+def mock_evidence(vm, labels):
+    vm.mock_web(r"proof-a\\.example",{"status":200,"body":BODY_A.decode()})
+    vm.mock_web(r"proof-b\\.example",{"status":200,"body":BODY_B.decode()})
+    vm.mock_llm(r"evidence auditor",json.dumps({"labels":labels}))
+
+
+def submitted(vm,deploy_fn):
+    c=deploy(vm,deploy_fn)
+    idx=open_deal(vm,c)
+    vm.value=0
+    vm.sender=SELLER
+    c.submit_evidence(idx,manifest((A,BODY_A),(B,BODY_B)))
+    return c,idx
+
+
+def test_approved_assessment_does_not_pay_early(direct_vm,direct_deploy):
+    c,idx=submitted(direct_vm,direct_deploy)
+    mock_evidence(direct_vm,["PASS","PASS"])
+    assert c.assess(idx)=="APPROVED"
+    assert json.loads(c.get_milestone(idx,0))["state"]=="APPROVE_PENDING"
+    assert json.loads(c.get_ledger(idx))["remaining_locked"]=="50"
+    assert json.loads(c.get_assessment(idx,0,0))["outcome"]=="APPROVED"
+    with direct_vm.expect_revert("challenge window active"):
+        c.settle(idx)
+
+
+def test_rejected_assessment_buyer_has_no_challenge_right(direct_vm,direct_deploy):
+    c,idx=submitted(direct_vm,direct_deploy)
+    mock_evidence(direct_vm,["FAIL","PASS"])
+    assert c.assess(idx)=="REJECTED"
+    assert json.loads(c.get_milestone(idx,0))["state"]=="REJECT_PENDING"
+    direct_vm.sender=BUYER
+    with direct_vm.expect_revert("unauthorized"):
+        c.challenge(idx,manifest(("https://proof-c.example/report",b"More evidence")),"review")
+
+
+def test_inconclusive_stays_submitted_without_release(direct_vm,direct_deploy):
+    c,idx=submitted(direct_vm,direct_deploy)
+    mock_evidence(direct_vm,["UNKNOWN","PASS"])
+    assert c.assess(idx)=="INCONCLUSIVE"
+    assert json.loads(c.get_milestone(idx,0))["state"]=="SUBMITTED"
+    assert json.loads(c.get_ledger(idx))["payout_queued_total"]=="0"
+
+
+def test_buyer_challenge_cannot_be_repeated(direct_vm,direct_deploy):
+    c,idx=submitted(direct_vm,direct_deploy)
+    mock_evidence(direct_vm,["PASS","PASS"])
+    c.assess(idx)
+    direct_vm.sender=BUYER
+    new=manifest(("https://proof-c.example/report",b"New supplemental proof"))
+    c.challenge(idx,new,"Not complete")
+    m=json.loads(c.get_milestone(idx,0))
+    assert m["challenge_used"] and m["state"]=="CHALLENGED"
+    with direct_vm.expect_revert("not challengeable"):
+        c.challenge(idx,new,"repeat")
+    assert json.loads(c.get_assessment(idx,0,0))["outcome"]=="APPROVED"
+
+
+def test_unavailable_source_does_not_commit_verdict(direct_vm,direct_deploy):
+    c,idx=submitted(direct_vm,direct_deploy)
+    direct_vm.mock_web(r"proof-a\\.example",{"status":503,"body":""})
+    direct_vm.mock_web(r"proof-b\\.example",{"status":503,"body":""})
+    with direct_vm.expect_revert("unavailable evidence; retry"):
+        c.assess(idx)
+    assert json.loads(c.get_milestone(idx,0))["state"]=="SUBMITTED"
+    assert json.loads(c.get_ledger(idx))["remaining_locked"]=="50"
