@@ -15,6 +15,9 @@ function validate(d){
  must(Object.keys(ops).length===18,"18 defined ops");
  must(s.size===11,"11 states");
  must(d.denomination==="GEN_WEI_U256","value type");
+ must(d.terms_commitment.domain==="SemanticEscrow.v1"&&d.terms_commitment.algorithm==="SHA-256","domain separated full terms");
+ must(d.terms_commitment.input.includes("buyer_nonce")&&d.terms_commitment.input.includes("criteria_text"),"material contract terms included");
+ must(d.invariants.includes("domain_separated_full_terms_commitment"),"full term commitment invariant");
  must(d.limits.milestones_min===1&&d.limits.milestones_max===5,"stages");
  must(d.limits.criteria_items_min===1&&d.limits.criteria_items_max===8,"rubric");
  must(d.limits.criteria_item_utf8_bytes_max<=512,"criteria bounded");
