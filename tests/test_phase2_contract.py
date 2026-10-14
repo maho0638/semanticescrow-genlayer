@@ -263,3 +263,48 @@ def test_successful_assessment_waits_then_advances_one_milestone(direct_vm,direc
     direct_vm.sender=SELLER
     c.submit_evidence(idx,manifest((A,BODY_A),(B,BODY_B)))
     assert json.loads(c.get_milestone(idx,1))["state"]=="SUBMITTED"
+
+def test_final_challenge_reversal_keeps_first_verdict(direct_vm,direct_deploy):
+    c,idx=submitted(direct_vm,direct_deploy)
+    mock_evidence(direct_vm,["PASS","PASS"])
+    assert c.assess(idx)=="APPROVED"
+    direct_vm.sender=BUYER
+    extra_url="https://proof-c.example/third"
+    extra_body=b"A dispute says version 4.2 did not ship."
+    c.challenge(idx,manifest((extra_url,extra_body)),"Confirm release authenticity")
+    direct_vm.clear_mocks()
+    mock_evidence(direct_vm,["FAIL","PASS"])
+    direct_vm.mock_web(r"proof-c\.example",{"status":200,"body":extra_body.decode()})
+    assert c.assess_challenge(idx)=="REJECTED"
+    m=json.loads(c.get_milestone(idx,0))
+    assert m["first_verdict"]=="APPROVED"
+    assert m["final_verdict"]=="REJECTED"
+    assert m["state"]=="CHALLENGE_REJECT_PENDING"
+    assert json.loads(c.get_assessment(idx,0,0))["outcome"]=="APPROVED"
+    assert json.loads(c.get_assessment(idx,0,1))["outcome"]=="REJECTED"
+    c.settle(idx)
+    ledger=json.loads(c.get_ledger(idx))
+    assert ledger["refund_queued_total"]=="50"
+    assert ledger["payout_queued_total"]=="0"
+
+
+def test_validator_rechecks_evidence_in_direct_mode(direct_vm,direct_deploy):
+    c,idx=submitted(direct_vm,direct_deploy)
+    mock_evidence(direct_vm,["PASS","PASS"])
+    assert c.assess(idx)=="APPROVED"
+    assert direct_vm.run_validator() is True
+    direct_vm.clear_mocks()
+    mock_evidence(direct_vm,["FAIL","PASS"])
+    assert direct_vm.run_validator() is False
+
+
+def test_delivery_expiry_exact_second_blocks_submission(direct_vm,direct_deploy):
+    c=deploy(direct_vm,direct_deploy)
+    idx=open_deal(direct_vm,c)
+    direct_vm.value=0
+    direct_vm.sender=SELLER
+    direct_vm.warp(datetime.fromtimestamp(DUE+172800,tz=timezone.utc).isoformat())
+    with direct_vm.expect_revert("delivery expired"):
+        c.submit_evidence(idx,manifest((A,BODY_A),(B,BODY_B)))
+    c.settle(idx)
+    assert json.loads(c.get_ledger(idx))["remaining_locked"]=="0"
