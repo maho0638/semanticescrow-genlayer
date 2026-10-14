@@ -214,7 +214,8 @@
     "consensus_state_writes_only_after_nondet",
     "queued_transfer_not_recipient_credit",
     "no_unilateral_cancel",
-    "no_cross_deal_ledger_moves"
+    "no_cross_deal_ledger_moves",
+    "domain_separated_full_terms_commitment"
   ],
   "caution": "Design is static; test execution does not demonstrate GenVM runtime, EVM delivery, DNS egress policy, or production soundness.",
   "deal_states": [
@@ -243,5 +244,13 @@
     "PAYOUT_QUEUED": "outbound transfer intent only; not beneficiary credit",
     "REFUND_QUEUED": "outbound transfer intent only; not beneficiary credit",
     "receipt_confirmation": "external read-only reconciliation; never blindly reissue"
+  },
+  "terms_commitment": {
+    "name": "terms_digest_sha256",
+    "domain": "SemanticEscrow.v1",
+    "algorithm": "SHA-256",
+    "input": "UTF8(canonical JSON of domain, chain_id, contract_address, buyer, seller, buyer_nonce, all amounts, due_at timestamps, criteria_text, criteria_items)",
+    "canonicalization": "Sorted object keys, no insignificant whitespace, strict UTF-8 without unpaired surrogate, integers as canonical decimal, no floats/duplicate keys",
+    "scope": "Immutable creation terms only; evidence manifest and challenge commitments separate"
   }
 }
