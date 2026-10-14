@@ -9,6 +9,8 @@ import pytest
 
 from gltest.direct import loader, sdk_loader, wasi_mock
 
+os.environ["GENVM_PREBUILT_DIR"] = str(Path(__file__).resolve().parents[1] / "vendor")
+
 
 
 _cache = Path(
