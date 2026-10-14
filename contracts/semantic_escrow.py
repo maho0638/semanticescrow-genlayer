@@ -59,7 +59,7 @@ def valid_text(s, maximum: int) -> bool:
     if not isinstance(s, str) or not 1 <= len(s.encode("utf-8", errors="surrogatepass")) <= maximum:
         return False
     for c in s:
-    fail_unless(all(33 <= ord(c) <= 126 and c != chr(92) for c in url)
+        if 0xD800 <= ord(c) <= 0xDFFF or ord(c) < 32 or ord(c) == 127:
             return False
     return True
 
@@ -127,7 +127,7 @@ def is_digest(s) -> bool:
 def normalize_url(url):
     fail_unless(isinstance(url, str) and 9 <= len(url) <= 256
                 and url.startswith("https://"), "only HTTPS URLs")
-    fail_unless(all(33 <= ord(c) <= 126 and c != "\" for c in url)
+    fail_unless(all(33 <= ord(c) <= 126 and c != chr(92) for c in url)
                 and "#" not in url, "unsafe URL characters")
     rest = url[8:]
     cut = min([v for v in [rest.find("/"), rest.find("?")] if v >= 0] or [len(rest)])
