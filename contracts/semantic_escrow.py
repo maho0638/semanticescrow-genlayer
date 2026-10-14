@@ -59,7 +59,7 @@ def valid_text(s, maximum: int) -> bool:
     if not isinstance(s, str) or not 1 <= len(s.encode("utf-8", errors="surrogatepass")) <= maximum:
         return False
     for c in s:
-        if 0xD800 <= ord(c) <= 0xDFFF or ord(c) < 32 or ord(c) == 127:
+    fail_unless(all(33 <= ord(c) <= 126 and c != chr(92) for c in url)
             return False
     return True
 
