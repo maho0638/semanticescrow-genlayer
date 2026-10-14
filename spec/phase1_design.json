@@ -1,6 +1,6 @@
 {
   "name": "SemanticEscrow",
-  "version": "1.0.0-design",
+  "version": "1.0.1-design",
   "scope": "PHASE1_ONLY",
   "denomination": "GEN_WEI_U256",
   "limits": {
@@ -16,7 +16,10 @@
     "review_ttl_sec": 604800,
     "challenge_ttl_sec": 172800,
     "challenge_review_ttl_sec": 604800,
-    "contract_challenges_per_milestone": 1
+    "contract_challenges_per_milestone": 1,
+    "criteria_items_min": 1,
+    "criteria_items_max": 8,
+    "criteria_item_utf8_bytes_max": 512
   },
   "statuses": [
     "WAITING",
@@ -213,5 +216,32 @@
     "no_unilateral_cancel",
     "no_cross_deal_ledger_moves"
   ],
-  "caution": "Design graph excludes overlay mutual-cancel handshake; specified separately in STATE_MACHINE.md. Graph checks are static design only."
+  "caution": "Design is static; test execution does not demonstrate GenVM runtime, EVM delivery, DNS egress policy, or production soundness.",
+  "deal_states": [
+    "RUNNING",
+    "CLOSED_QUEUED",
+    "TERMINATED_QUEUED"
+  ],
+  "cancel_overlay": {
+    "propose_cancel": {
+      "role": "buyer_or_seller",
+      "guard": "running;no_current_transfer_queued;no_live_other_proposal",
+      "effect": "store proposer and 48h expiry, do not pause any deadline or change money"
+    },
+    "confirm_cancel": {
+      "role": "counterparty_only",
+      "guard": "now<proposal_expiry;running;no_current_transfer_queued",
+      "effect": "queue refund of all remaining locked to buyer;mark all unsettled milestones canceled;TERMINATED_QUEUED"
+    },
+    "expire_cancel": {
+      "role": "anyone",
+      "guard": "now>=proposal_expiry",
+      "effect": "clear proposal only, no refund or state change"
+    }
+  },
+  "settlement_observation": {
+    "PAYOUT_QUEUED": "outbound transfer intent only; not beneficiary credit",
+    "REFUND_QUEUED": "outbound transfer intent only; not beneficiary credit",
+    "receipt_confirmation": "external read-only reconciliation; never blindly reissue"
+  }
 }
