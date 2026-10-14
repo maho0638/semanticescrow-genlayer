@@ -219,3 +219,47 @@ def test_unavailable_source_does_not_commit_verdict(direct_vm,direct_deploy):
         c.assess(idx)
     assert json.loads(c.get_milestone(idx,0))["state"]=="SUBMITTED"
     assert json.loads(c.get_ledger(idx))["remaining_locked"]=="50"
+
+def test_two_party_cancellation_queues_only_one_refund(direct_vm,direct_deploy):
+    c=deploy(direct_vm,direct_deploy)
+    idx=open_deal(direct_vm,c)
+    direct_vm.value=0
+    c.propose_cancel(idx)
+    direct_vm.sender=SELLER
+    c.confirm_cancel(idx)
+    led=json.loads(c.get_ledger(idx))
+    assert led["remaining_locked"]=="0"
+    assert led["refund_queued_total"]=="50"
+    assert led["payout_queued_total"]=="0"
+    assert json.loads(c.get_deal(idx))["state"]=="TERMINATED_QUEUED"
+    with direct_vm.expect_revert("deal terminated"):
+        c.settle(idx)
+
+
+def test_timeout_settlement_refunds_when_delivery_missing(direct_vm,direct_deploy):
+    c=deploy(direct_vm,direct_deploy)
+    idx=open_deal(direct_vm,c)
+    direct_vm.value=0
+    direct_vm.warp(datetime.fromtimestamp(DUE+172800,tz=timezone.utc).isoformat())
+    c.settle(idx)
+    led=json.loads(c.get_ledger(idx))
+    assert led["refund_queued_total"]=="50" and led["remaining_locked"]=="0"
+    with direct_vm.expect_revert("deal terminated"):
+        c.settle(idx)
+
+
+def test_successful_assessment_waits_then_advances_one_milestone(direct_vm,direct_deploy):
+    c,idx=submitted(direct_vm,direct_deploy)
+    mock_evidence(direct_vm,["PASS","PASS"])
+    assert c.assess(idx)=="APPROVED"
+    first=json.loads(c.get_milestone(idx,0))
+    direct_vm.warp(datetime.fromtimestamp(first["assessed_at"]+172800,tz=timezone.utc).isoformat())
+    c.settle(idx)
+    led=json.loads(c.get_ledger(idx))
+    assert led["payout_queued_total"]=="20"
+    assert led["remaining_locked"]=="30"
+    assert json.loads(c.get_milestone(idx,0))["state"]=="PAYOUT_QUEUED"
+    assert json.loads(c.get_milestone(idx,1))["state"]=="AWAITING_DELIVERY"
+    with direct_vm.expect_revert("submission not available"):
+        direct_vm.sender=SELLER
+        c.submit_evidence(idx,manifest((A,BODY_A),(B,BODY_B)))
