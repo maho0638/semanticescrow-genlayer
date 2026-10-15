@@ -111,7 +111,14 @@ for candidate in variants:
         print("SE7_SIZE",tag,"BYTES",len(source.encode("utf-8")),"SHA256",
               hashlib.sha256(source.encode()).hexdigest(),
               "API_SIGNATURE_MATCH",match,flush=True)
-        if not match:continue
+        if not match:
+            print("SE7_SIZE",tag,"MISSING_METHODS",
+                  ",".join(sorted(set(SIGNATURES)-set(shape))),flush=True)
+            print("SE7_SIZE",tag,"ADDED_METHODS",
+                  ",".join(sorted(set(shape)-set(SIGNATURES))),flush=True)
+            print("SE7_SIZE",tag,"ALTERED_SIGNATURES",
+                  ",".join(sorted(m for m in set(shape)&set(SIGNATURES) if shape[m]!=SIGNATURES[m])),flush=True)
+            continue
         payload=serialize([source,calldata.encode(make_calldata_object(method=None,args=None,kwargs=None)),False])
         data=_encode_add_transaction_data(client,type("Pub",(),{"address":FROM})(),
                "0x0000000000000000000000000000000000000000",3,payload,
