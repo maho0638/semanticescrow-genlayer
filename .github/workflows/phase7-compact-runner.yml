@@ -20,5 +20,8 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install --disable-pip-version-check genlayer-test==0.30.0rc2 cloudpickle==3.1.2 pytest==9.1.1
-      - run: python -m pytest -q tests/test_phase7_external_safety_order.py
+      - run: |
+          export ACCOUNT_PRIVATE_KEY_1="$(python -c 'from eth_account import Account; print(Account.create().key.hex())')"
+          export ACCOUNT_PRIVATE_KEY_2="$(python -c 'from eth_account import Account; print(Account.create().key.hex())')"
+          python -m pytest -q tests/test_phase7_external_safety_order.py
       - run: python -m compileall -q tools/phase7_bradbury_windows.py tests/test_phase7_bradbury_external.py
