@@ -74,8 +74,18 @@ def main():
       "maxFeePerGas":hex(base+priority),
       "maxPriorityFeePerGas":hex(priority),
     }
+    estimate,error=rpc("eth_estimateGas",[tx])
+    print("SE7_DRY_GAS_ESTIMATE_WEI",estimate if error is None else "FAILED",flush=True)
+    if estimate is not None:
+        gas_limit=int(estimate,16)
+        blockgas=int(latest.get("gasLimit","0x0"),16)
+        print("SE7_DRY_BLOCK_GAS_LIMIT",blockgas,"ESTIMATED_GAS",gas_limit,
+              "MAX_TX_FEE_WEI",gas_limit*(base+priority),flush=True)
     for method in ("eth_estimateGas","eth_call"):
-        out,error=rpc(method,[tx] if method=="eth_estimateGas" else [tx,"latest"])
+        args=[tx] if method=="eth_estimateGas" else [
+            {**tx,"gas":hex(min(int(estimate,16)+3000000,int(latest.get("gasLimit","0x0"),16)))
+             } if estimate is not None else tx, "latest"]
+        out,error=rpc(method,args)
         if error:
             ec=error.get("code") if isinstance(error,dict) else "UNKNOWN"
             msg=str(error.get("message","")) if isinstance(error,dict) else ""
