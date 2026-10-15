@@ -27,6 +27,20 @@ class LegacyReceiptError(RuntimeError):
     pass
 
 
+def is_finalized_success(receipt):
+    """Accept only independently decoded, final v0.6 GenVM successful results.
+
+    ACCEPTED or FINISHED_WITH_ERROR may NEVER qualify, even if a tx has a
+    successful EVM receipt. This predicate does not prove child GEN delivery.
+    """
+    return (isinstance(receipt,dict)
+            and type(receipt.get("status")) is int and receipt["status"]==7
+            and receipt.get("status_name")=="FINALIZED"
+            and type(receipt.get("tx_execution_result")) is int
+            and receipt["tx_execution_result"]==1
+            and receipt.get("tx_execution_result_name")=="FINISHED_WITH_RETURN")
+
+
 def _canonical_id(v):
     try:
         blob=Web3.to_bytes(hexstr=v) if isinstance(v,str) else bytes(v)
