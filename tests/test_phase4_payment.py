@@ -263,3 +263,13 @@ def test_queued_outflow_is_not_claimed_as_recipient_credit(direct_vm,direct_depl
     assert ledger(c,x)["refund_queued_total"]==9
     assert not any("credited" in key or "received" in key for key in meta)
     assert int(c.get_total_locked())==0
+
+
+def test_unsolicited_native_value_reverts_without_becoming_escrow(direct_vm,direct_deploy):
+    c=deploy(direct_vm,direct_deploy)
+    direct_vm.sender=ATTACKER
+    direct_vm.value=19
+    with direct_vm.expect_revert("unsolicited GEN not credited to escrow"):
+        c.__receive__()
+    assert int(c.get_total_locked())==0
+    assert int(c.deal_count())==0
