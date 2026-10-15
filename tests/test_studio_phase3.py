@@ -67,7 +67,7 @@ def _send(method,args,fees,account=None,value=0,context=None,label="write"):
 
 
 def test_studio_five_validator_deposit_submit_and_consensus():
-    from gltest import get_contract_factory,get_gl_client,get_validator_factory
+    from gltest import get_contract_factory,get_gl_client,get_validator_factory,get_accounts
     client=get_gl_client()
     rpc=client.provider
     chain=int(rpc.make_request("eth_chainId",[])["result"],16)
@@ -79,7 +79,11 @@ def test_studio_five_validator_deposit_submit_and_consensus():
     # No remote wallet, no actual tokens. Studio allocates disposable funded accounts.
     from gltest import get_default_account
     buyer=get_default_account()
-    seller_addr="0x"+"b"*40 # no signing necessary to submit with seller in phase 3 baseline
+    accounts=get_accounts()
+    assert len(accounts)>=2,"two funded local Studio accounts required"
+    seller=next((a for a in accounts if a.address.lower()!=buyer.address.lower()),None)
+    assert seller is not None,"seller must be a distinct signer"
+    seller_addr=seller.address
     fees=_fees(client)
     context={"genvm_datetime":AT}
     factory=get_contract_factory(contract_file_path=Path("contracts/semantic_escrow.py").resolve())
@@ -126,9 +130,27 @@ def test_studio_five_validator_deposit_submit_and_consensus():
     addrs={str(v["address"]).lower() for v in registered}
     assert len(addrs)==5
     print("SE_STAGE3: MOCKED_FIVE_VALIDATORS_READY",flush=True)
-    # The seller is not the buyer; only seller may submit. Use an ephemeral
-    # local Studio account below, not a real user wallet.
-    from gltest import get_default_account as _default
-    # In the first pass, do not impersonate sellers via undocumented keys.
-    # Prove bad sender refusal via normal transaction, then report what is blocked.
-    print("SE_STAGE3: FIVE_VALIDATOR_CREATE_ONLY_CONFIRMED",flush=True)
+    evidence=json.dumps([
+      {"url":URL_A,"sha256":hashlib.sha256(BODY_A.encode("utf-8")).hexdigest()},
+      {"url":URL_B,"sha256":hashlib.sha256(BODY_B.encode("utf-8")).hexdigest()},
+    ],separators=(",",":"))
+    submitted=_send(contract.submit_evidence,[0,evidence],
+                    fees,seller,context=context,label="SELLER_SUBMIT_EVIDENCE")
+    _quorum(submitted,"SUBMIT",addrs)
+    assert json.loads(contract.get_milestone(args=[0,0]).call())["state"]=="SUBMITTED"
+    print("SE_STAGE3: SELLER_SUBMISSION_FINALIZED",flush=True)
+
+    evaluated=_send(contract.assess,[0],fees,buyer,context=context,
+                    label="INDEPENDENT_CONSENSUS_ASSESSMENT")
+    _quorum(evaluated,"ASSESS",addrs)
+    milestone=json.loads(contract.get_milestone(args=[0,0]).call())
+    assert milestone["state"]=="APPROVE_PENDING",milestone["state"]
+    assert milestone["first_verdict"]=="APPROVED"
+    decision=json.loads(contract.get_assessment(args=[0,0,0]).call())
+    assert decision["outcome"]=="APPROVED"
+    assert len(decision["source_results"])==2
+    assert all(row["integrity"]=="VERIFIED" for row in decision["source_results"])
+    final_ledger=json.loads(contract.get_ledger(args=[0]).call())
+    assert final_ledger["remaining_locked"]=="25"
+    assert final_ledger["payout_queued_total"]=="0"
+    print("SE_STAGE3: FIVE_VALIDATOR_SOURCE_VERDICT_FINALIZED_AND_READBACK",flush=True)
