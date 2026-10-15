@@ -195,6 +195,7 @@ def test_studio_five_validator_poisoned_evidence_fails_closed():
     assert l["initial_deposit"]=="25" and l["remaining_locked"]=="25"
     assert l["payout_queued_total"]=="0" and l["refund_queued_total"]=="0"
     assert int(contract.get_total_locked().call())==25
+    assert json.loads(contract.get_transfer_intents(args=[0]).call())==[]
     print("SE_STAGE6: HASH_MISMATCH_INCONCLUSIVE_WITHOUT_RELEASE",flush=True)
 
     expiry=datetime.fromtimestamp(m["submitted_at"]+604800,tz=timezone.utc).isoformat()
@@ -206,5 +207,16 @@ def test_studio_five_validator_poisoned_evidence_fails_closed():
                    "payout_queued_total":"0","refund_queued_total":"25"}
     assert int(contract.get_total_locked().call())==0
     assert json.loads(contract.get_deal(args=[0]).call())["state"]=="TERMINATED_QUEUED"
+    outgoing=json.loads(contract.get_transfer_intents(args=[0]).call())
+    assert len(outgoing)==1
+    transfer=outgoing[0]
+    deal=json.loads(contract.get_deal(args=[0]).call())
+    assert transfer["recipient"]==deal["buyer"] and transfer["kind"]=="REFUND"
+    assert transfer["amount_wei"]=="25" and transfer["milestone_index"]==0
+    assert transfer["status"]=="QUEUED_UNVERIFIED"
+    assert transfer["terms_digest_sha256"]==deal["terms_digest_sha256"]
+    assert len(transfer["intent_id_sha256"])==64
+    assert json.loads(contract.get_transfer_intent(args=[0,0]).call())==transfer
+    print("SE_STAGE7: STUDIO_QUEUED_REFUND_INTENT_READBACK_PASS",flush=True)
     print("SE_STAGE6: INCONCLUSIVE_TIMEOUT_REFUND_FINALIZED",flush=True)
     # Parent FINALIZED plus queued refund is not proof of receiver EVM credit.

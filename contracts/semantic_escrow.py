@@ -618,6 +618,68 @@ class SemanticEscrow(gl.contract.Contract):
         return canonical({k: d[k] for k in
             ("initial_deposit", "remaining_locked", "payout_queued_total", "refund_queued_total")})
 
+
+    def _queued_intents(self, deal_id: u256):
+        """Deterministic settlement *intents*, never EVM delivery receipts.
+
+        One refund can terminate a deal; preceding milestones can have their
+        own payout. Neither FINALIZED nor QUEUED proves recipient credit.
+        """
+        idx, d = self._get(deal_id)
+        rows = []
+        payouts = 0
+        refunds = 0
+        for pos, milestone in enumerate(d["milestones"]):
+            state = milestone["state"]
+            if state not in ("PAYOUT_QUEUED", "REFUND_QUEUED"):
+                continue
+            payout = state == "PAYOUT_QUEUED"
+            amount = (int(milestone["terms"]["amount_wei"]) if payout
+                      else int(d["refund_queued_total"]))
+            fail_unless(amount > 0, "zero queued transfer")
+            kind = "PAYOUT" if payout else "REFUND"
+            recipient = d["seller"] if payout else d["buyer"]
+            row = {
+                "deal_id": idx,
+                "milestone_index": pos,
+                "kind": kind,
+                "recipient": recipient,
+                "amount_wei": str(amount),
+                "status": "QUEUED_UNVERIFIED",
+                "terms_digest_sha256": d["terms_digest_sha256"],
+            }
+            row["intent_id_sha256"] = json_hash({
+                "domain": "SemanticEscrow.transfer-intent.v1",
+                "terms_digest_sha256": row["terms_digest_sha256"],
+                "deal_id": idx, "milestone_index": pos,
+                "kind": kind, "recipient": recipient, "amount_wei": str(amount),
+            })
+            rows.append(row)
+            if payout:
+                payouts += amount
+            else:
+                refunds += amount
+        fail_unless(payouts == int(d["payout_queued_total"])
+                    and refunds == int(d["refund_queued_total"]),
+                    "queued intent ledger mismatch")
+        return rows
+
+    @gl.public.view
+    def get_transfer_intents(self, deal_id: u256) -> str:
+        """Read-only intent list, NOT proof of child execution or EVM credit."""
+        return canonical(self._queued_intents(deal_id))
+
+    @gl.public.view
+    def get_transfer_intent(self, deal_id: u256, milestone_index: u256) -> str:
+        """Lookup one queued transfer by milestone; no resend/retry endpoint."""
+        index = int(milestone_index)
+        _, d = self._get(deal_id)
+        fail_unless(0 <= index < len(d["milestones"]), "milestone does not exist")
+        for row in self._queued_intents(deal_id):
+            if row["milestone_index"] == index:
+                return canonical(row)
+        raise gl.vm.UserError("no queued transfer for milestone")
+
     @gl.public.view
     def get_terms_digest(self, deal_id: u256) -> str:
         _, d = self._get(deal_id)
