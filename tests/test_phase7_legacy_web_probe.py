@@ -10,7 +10,7 @@ import pytest
 def test_legacy_web_mock_decodes_response(direct_vm, direct_deploy):
     from test_phase2_contract import deploy
     deploy(direct_vm,direct_deploy)  # load pinned SDK module before direct web call
-    direct_vm.mock_web(r"proof-a\\.example", {
+    direct_vm.mock_web(r"proof-a\.example", {
         "status":200,
         "body":"Release version 4.2 completed and accepted on 2026-10-10."
     })
@@ -26,6 +26,9 @@ def test_legacy_web_mock_decodes_response(direct_vm, direct_deploy):
             assert response.body==b"Release version 4.2 completed and accepted on 2026-10-10."
     except Exception as exc:
         print("SE7_LEGACY_WEB_DIAG","ERROR_CLASS",type(exc).__name__,flush=True)
+        for line in getattr(direct_vm,"_traces",[])[-14:]:
+            if "gl_call" in line or "Mock" in line or "Web" in line:
+                print("SE7_LEGACY_WEB_TRACE",str(line)[:240],flush=True)
         cause=exc.__cause__
         print("SE7_LEGACY_WEB_DIAG","CAUSE_CLASS",type(cause).__name__ if cause else "NONE",flush=True)
         raise
