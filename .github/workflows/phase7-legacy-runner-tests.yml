@@ -50,6 +50,7 @@ jobs:
             "$base/b45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6.tar" src
           test -s "$base/b45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6.tar"
           echo "GENVM_PREBUILT_DIR=$PWD/.legacy-genvm" >> "$GITHUB_ENV"
+          echo "SEMANTICESCROW_SDK_0_2_EMULATION=1" >> "$GITHUB_ENV"
           echo "SE7_OFFICIAL_TAG_SOURCE_EMULATION_READY (not packaged runner hash verification)"
       - name: Full direct-mode behavioral regression
         run: |

@@ -9,6 +9,23 @@ import pytest
 
 from gltest.direct import loader, sdk_loader, wasi_mock
 
+# The installed gltest 0.30 Direct Mode embeds v0.3-only calldata imports.
+# This isolated CI setting rebinds its transport to the official v0.2.16 SDK
+# source for behavior checks; not a claim of packaged-runner hash fidelity.
+if os.environ.get("SEMANTICESCROW_SDK_0_2_EMULATION") == "1":
+    from gltest.direct import sdk_compat
+    def _legacy_cd():
+        return importlib.import_module("genlayer.py.calldata")
+    def _legacy_types():
+        return importlib.import_module("genlayer.py.types")
+    sdk_compat.import_calldata = _legacy_cd
+    sdk_compat.import_types = _legacy_types
+    sdk_compat.import_address = lambda: _legacy_types().Address
+    sdk_compat.import_lazy = lambda: _legacy_types().Lazy
+    loader.import_calldata = _legacy_cd
+    loader.import_address = lambda: _legacy_types().Address
+    loader.import_lazy = lambda: _legacy_types().Lazy
+
 os.environ.setdefault("GENVM_PREBUILT_DIR", str(Path(__file__).resolve().parents[1] / "vendor"))
 
 
