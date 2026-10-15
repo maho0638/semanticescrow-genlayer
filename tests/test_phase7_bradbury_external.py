@@ -10,6 +10,7 @@ import sys
 sys.path.insert(0, str(_Path(__file__).resolve().parents[1] / "tools"))
 from phase7_evm_receipt import verify_confirmed_value_transfer
 from phase7_legacy_compat import require_legacy_bradbury
+from phase7_schema_compat import bind_verified_schema
 BUYER=Account.from_key(os.environ["ACCOUNT_PRIVATE_KEY_1"])
 SELLER=Account.from_key(os.environ["ACCOUNT_PRIVATE_KEY_2"])
 VALUE=10**14
@@ -70,6 +71,9 @@ def test_bradbury_real_ghost_refund():
     print("SE7_PUBLIC_SELLER_FUNDED",txid,flush=True)
     print("SE7_PUBLIC_STEP VERIFIED_LEGACY_NO_FEE_ESTIMATE",flush=True)
     fac=get_contract_factory(contract_file_path=Path("contracts/semantic_escrow.py").resolve())
+    print("SE7_PUBLIC_STEP SCHEMA_LOOKUP_BEGIN",flush=True)
+    schema = bind_verified_schema(fac)
+    print("SE7_PUBLIC_STEP SCHEMA_LOOKUP_PASS", len(schema["methods"]),flush=True)
     print("SE7_PUBLIC_STEP DEPLOY_BEGIN",flush=True)
     d=fac.deploy_contract_tx(account=buyer,fees=fees,wait_until="finalized",
                              consensus_max_rotations=3,wait_retries=140,wait_interval=3000)

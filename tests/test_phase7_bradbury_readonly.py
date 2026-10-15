@@ -32,7 +32,9 @@ def test_bradbury_sdk_can_access_rpc_and_configured_ephemeral_accounts():
     from pathlib import Path
     from gltest import get_contract_factory
     factory = get_contract_factory(contract_file_path=Path("contracts/semantic_escrow.py").resolve())
-    schema = factory._get_schema_with_fallback()
-    assert schema is not None, "GenVM schema unavailable before funding"
+    from phase7_schema_compat import bind_verified_schema
+    print("SE7_PUBLIC_CONTRACT_SCHEMA_CHECK_BEGIN",flush=True)
+    schema = bind_verified_schema(factory)
+    assert len(schema["methods"]) == 17
     print("SE7_PUBLIC_CONTRACT_SCHEMA_CHECK_PASS",flush=True)
 
