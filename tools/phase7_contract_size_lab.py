@@ -81,6 +81,19 @@ for tag,diff in [
     ("conservative",{"rename_locals":False,"prefer_single_line":False}),
     ("dense",{"rename_locals":False,"prefer_single_line":True}),
     ("local_names",{"rename_locals":True,"preserve_locals":sorted(PRESERVE),"prefer_single_line":True}),
+    ("literals_hoisted",{"rename_locals":True,"preserve_locals":sorted(PRESERVE),
+                          "hoist_literals":True,"constant_folding":True,"remove_dead_branches":True,
+                          "remove_builtin_exception_brackets":True,"prefer_single_line":True}),
+    ("globals_condensed",{"rename_locals":True,"preserve_locals":sorted(PRESERVE),
+                          "rename_globals":True,
+                          "preserve_globals":sorted({
+                              "SemanticEscrow","gl","Address","u256","DynArray","TreeMap",
+                              "hashlib","json","datetime","timezone"
+                          }|set(SIGNATURES.keys())),
+                          "hoist_literals":True,"constant_folding":True,
+                          "remove_dead_branches":True,
+                          "remove_builtin_exception_brackets":True,
+                          "prefer_single_line":True}),
 ]:
     try:
         # Remove initial dependency comments and prepend them verbatim.
