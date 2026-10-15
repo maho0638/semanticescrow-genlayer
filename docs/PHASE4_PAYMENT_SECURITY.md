@@ -6,9 +6,9 @@
 
 - Repository: https://github.com/maho0638/semanticescrow-genlayer
 - Isolated branch: `audit/phase4-payment-refund-safety-20261015` — no merge into `main`.
-- Financial safety CI: **39 PASS, 0 failed**, GenVM lint **3 PASS**, architecture static model **18,203 assertions / 2,000 abstract scenarios**: https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38698597328.
+- Financial safety CI: **39 PASS, 0 failed (subject to recheck after removing incompatible public fallback)**, GenVM lint **3 PASS**, architecture static model **18,203 assertions / 2,000 abstract scenarios**: https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38698597328.
 - Prior **real local 5-validator** positive assessment at Phase 3: https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38666863852 (3/5 agree, 2 idle; finalized state readback).
-- Current five-validator money-settlement CI: https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38697966876 — **result must be read and added before marking Phase 4 Studio evidence PASS**.
+- Initial five-validator integration failed with GenVM ABI schema retrieval on an incompatible public `__receive__`; see https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38697966876. The corrected phase-4 integration has a fresh run; do not claim it passed until the final receipt checks.
 - Python 3.12, pinned `genvm-linter==0.11.0`, `genlayer-test==0.30.0rc2`, mocked/local GEN only.
 
 ## New stage-4 implementation (read actual source)
@@ -17,7 +17,7 @@
 - On payable `create_deal`: reject aggregate overflow; increase `total_locked` once, with immutable per-deal beneficiary addresses.
 - On `_queue_settlement`: reject zero/over-locked emission; decrement global and per-deal obligations exactly once and record immutable stage intent **before** emission, on protocol finality only.
 - `get_total_locked()` publicly exposes unqueued GEN liability, NOT current EVM beneficiary credit.
-- `__receive__` explicitly rejects accidental direct native GEN transfers; EVM forced transfers cannot be prevented by a Python method.
+- In the pinned runner, declaring a public `__receive__` (although described by newer documentation) breaks the ABI schema: `genlayer._internal.get_schema.get_schema` rejects public names beginning with `__`. The experimental handler was **removed** after a failed real Studio schema/deploy test. The only payable ABI method is now `create_deal`. No-method/forced EVM transfers are outside this contract's per-deal escrow accounting and must not be mislabelled as a new escrow deposit. Do not claim these external ingress paths were exhaustively tested.
 
 ## Verified financial and authorization regression classes
 
@@ -29,7 +29,7 @@ Tests under `tests/test_phase4_payment.py` supplement original 23 contract tests
 - Cannot cancel without both parties, no use of expired mutual-cancel signature, attacker cannot force premature settle or change recipient.
 - Duplicate settle, double refund/payout, replay and state reopening fail.
 - Zero, noncanonical, negative and overflow amounts fail before changing liabilities.
-- Direct value-only send rejects accidental deposit.
+- Static source inspection confirms only `create_deal` is public/payable; the incompatible public fallback is absent. No unsupported claim is made about forced EVM sends.
 - `remaining_locked + total_payout_queued + total_refund_queued == initial_deposit` on every modeled deal; global `total_locked` equals sum of all deals' remaining obligations.
 
 ## Financial safety limitations — do not erase or misrepresent
