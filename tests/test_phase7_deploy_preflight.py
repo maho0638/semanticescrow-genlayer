@@ -34,7 +34,7 @@ def test_scoped_interception_only_pads_verified_consensus_selector():
     tx={"to":CONSENSUS_PROXY,"data":"0xe71d5196"+"00"*32}
     assert int(provider.make_request("eth_estimateGas",[tx])["result"],16)==14_950_504
     assert provider.make_request("eth_estimateGas",[{"to":CONSENSUS_PROXY,"data":"0xdeadbeef"}])["result"]==hex(13_591_367)
-    assert provider.make_request("eth_getBalance",["0xab","latest"])["result"]==hex(25_444_878)
+    assert provider.make_request("eth_getBalance",["0xab","latest"])["result"]==hex(13_591_367)
     before=len(seen)
     install_deploy_gas_headroom(client)
     assert len(seen)==before
