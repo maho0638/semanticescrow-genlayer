@@ -1,6 +1,6 @@
-# SemanticEscrow — executable security matrix through Phase 6
+# SemanticEscrow — executable security matrix through scoped Phase 7
 
-**Evidence:** 142 Direct Mode tests, 3 GenVM lint checks, 18,203 static design assertions, 2,000 model scenarios. Latest verified Direct Mode run: https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38709393039. Older five-validator Studio fund/review/challenge/payout/refund tests were run in stages 3–5. Phase-6 poisoned-source Studio run: **SUCCESS** https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38709210875 (confirmed complete; 3 agree/2 idle, changed SHA source never pays, objective timeout queues refund).
+**Evidence:** 153 Direct Mode tests, 3 GenVM lint checks, 18,203 static design assertions, 2,000 model scenarios. Latest verified Direct Mode run: https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38713765216. Phase-7 Studio queued-refund-intent readback SUCCESS: https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38713765220. Older five-validator Studio fund/review/challenge/payout/refund tests were run in stages 3–5. Phase-6 poisoned-source Studio run: **SUCCESS** https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38709210875 (confirmed complete; 3 agree/2 idle, changed SHA source never pays, objective timeout queues refund).
 
 | ID | Category | Evidence status |
 | --- | --- | --- |
@@ -25,5 +25,9 @@
 | P6-03 | Malformed, additional, NaN, duplicate-key LLM output never alters state | Direct Mode PASS |
 | P6-04 | Validator re-fetch disagrees on status/digest or model decision | Direct Mode PASS; five-validator local poisoned-source INCONCLUSIVE and expiry refund PASS |
 | P6-05 | Injection characters are framed as untrusted; beneficiary stays immutable | Direct Mode PASS for deterministic guards, NOT proof an actual LLM resists injection |
+
+| P7-01 | Read-only frozen payout/refund recipient, amount, domain-separated intent hash | Direct Mode PASS; five-validator Studio refund readback PASS |
+| P7-02 | Multiple payout and single terminal refund accounting reconciliation; no duplicate late milestones | Direct Mode PASS; real EVM delivery still unproven |
+| P7-03 | Absence of automatic resend and false `credited` status | Direct Mode PASS, `QUEUED_UNVERIFIED` only; failed-child recovery still **NOT PROVEN** |
 
 **No real GEN spent; no user wallets, main merge, Portal submission or public deployment.** A network-hosted, external multi-provider and EVM receipt audit is a separate risk and cannot be substituted with successful mocks.

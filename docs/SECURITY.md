@@ -1,4 +1,4 @@
-# Threat model, money invariants and release gates — phases 1–6
+# Threat model, money invariants and release gates — phases 1–7 (Phase 7 scoped)
 
 ## Protected assets
 
@@ -44,3 +44,10 @@ Buyer deposit, locked milestone balances, seller payout, buyer refund, frozen ru
 - Independent professional audit and threat assessment for any real monetary value.
 
 **Phase-6 Direct Mode security and local consensus tests are not a production audit.** The GenVM network, ghost/EVM transfer, recipient credit and independent publisher authenticity remain unverified release gates.
+
+
+## Scoped Phase-7 intent verification (15 Oct 2026)
+
+Two read-only getters now expose deterministic SHA-256 IDs for terminal payout/refund *intent* (fixed deal, milestone, frozen terms digest, kind, beneficiary, amount), cross-checked against all queued per-deal totals. Direct Mode 153/153 tests and five-validator local Studio readback succeeded at contract commit `bb9df849b12f2eb646fc9cb73bf7f360831af68e`. Tests: https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38713765216 and https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38713765220. Original Phase-7 full checklist cannot be proven from the handoff.
+
+**These rows are not transfer execution receipts and do not certify payout.** An EVM Ghost-layer failed child message can strand value. Before any live GEN usage, independent parent and child receipts, expected Ghost sender, frozen beneficiary, exact wei amount, chain identity, final execution success and chain balance effects must be verified. Never auto-resend solely because readback reports QUEUED_UNVERIFIED. The DNS and independent-source gates remain unresolved.
