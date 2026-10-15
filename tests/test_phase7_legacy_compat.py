@@ -5,6 +5,7 @@ from types import SimpleNamespace
 import pytest
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"tools"))
 from phase7_legacy_compat import (
+    _install_legacy_consensus_abi, LEGACY_ADD_ABI,
     require_legacy_bradbury, IncompatibleBradburyProtocol,
     CHAIN_ID, FEE_PROXY, FEE_IMPLEMENTATION, CONSENSUS_PROXY,
     CONSENSUS_IMPLEMENTATION, EIP1967_IMPL,
@@ -45,6 +46,28 @@ def make_client(*, chain=CHAIN_ID, fee_impl=FEE_IMPLEMENTATION,
         consensus_main_contract={"address":CONSENSUS_PROXY,"abi":abi},
         fee_manager_contract={"address":FEE_PROXY})
     return SimpleNamespace(chain=chain_def,provider=SimpleNamespace(make_request=make_request))
+
+def test_modern_tuple_abi_is_patched_only_after_verified_guard():
+    client=make_client()
+    client.chain.consensus_main_contract["abi"]=[{
+        "name":"addTransaction","type":"function",
+        "inputs":[{"type":"tuple","components":[{"type":"address"},{"type":"address"}]}]
+    }]
+    before=client.chain.consensus_main_contract["abi"]
+    assert require_legacy_bradbury(client) is None
+    after=client.chain.consensus_main_contract["abi"]
+    assert after is before
+    assert after[0]["inputs"]==LEGACY_ADD_ABI["inputs"]
+
+def test_mismatched_implementation_must_not_patch_modern_abi():
+    client=make_client(fee_impl="0x"+"ab"*20)
+    client.chain.consensus_main_contract["abi"]=[{
+        "name":"addTransaction","type":"function","inputs":[{"type":"tuple"}]
+    }]
+    old=client.chain.consensus_main_contract["abi"][0]
+    with pytest.raises(IncompatibleBradburyProtocol):
+        require_legacy_bradbury(client)
+    assert client.chain.consensus_main_contract["abi"][0] is old
 
 def test_verified_legacy_path_never_invents_fees():
     assert require_legacy_bradbury(make_client()) is None

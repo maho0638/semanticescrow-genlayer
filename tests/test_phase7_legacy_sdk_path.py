@@ -7,10 +7,15 @@ from genlayer_py.chains.testnet_bradbury import testnet_bradbury
 from genlayer_py.client.genlayer_client import GenLayerClient
 from genlayer_py.contracts.actions import _encode_add_transaction_data
 from genlayer_py.transactions.fees import normalize_transaction_fees
+from pathlib import Path
+import sys
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"tools"))
+from phase7_legacy_compat import _install_legacy_consensus_abi
 
 def test_native_sdk_default_uses_verified_legacy_selector_without_fee_policy():
     buyer, seller = Account.create(), Account.create()
     client = GenLayerClient(testnet_bradbury, buyer)
+    _install_legacy_consensus_abi(client.chain.consensus_main_contract)
     calldata = _encode_add_transaction_data(
         client, buyer, seller.address, 3, "0x1234",
         transaction_fees=normalize_transaction_fees(),

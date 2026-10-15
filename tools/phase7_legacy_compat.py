@@ -8,8 +8,6 @@ Only for this pinned, verified deployment, permit SDK's *native legacy path*
 
 All checks are read-only. This module does NOT approve production escrow.
 """
-from types import SimpleNamespace
-
 CHAIN_ID = 4221
 FEE_PROXY = "0xF205868bf5db79d2162843742D18D0900A9E462a"
 FEE_IMPLEMENTATION = "0x31199772507933c5ad94da28ab7b02bf9c41069c"
@@ -68,6 +66,44 @@ def _read_word(client, to, selector, data=""):
     return _hex_int(res)
 
 
+# Published six-argument v0.6 consensus ABI, verified against deployed
+# 0xe71d5196. Preserve unrelated ABI entries (appeals, receipts etc).
+LEGACY_ADD_ABI = {
+    "inputs": [
+        {"internalType":"address","name":"_sender","type":"address"},
+        {"internalType":"address","name":"_recipient","type":"address"},
+        {"internalType":"uint256","name":"_numOfInitialValidators","type":"uint256"},
+        {"internalType":"uint256","name":"_maxRotations","type":"uint256"},
+        {"internalType":"bytes","name":"_calldata","type":"bytes"},
+        {"internalType":"uint256","name":"_validUntil","type":"uint256"},
+    ],
+    "name":"addTransaction", "outputs":[], "stateMutability":"payable",
+    "type":"function"
+}
+OLD_ADD_INPUT_TYPES=[e["type"] for e in LEGACY_ADD_ABI["inputs"]]
+
+
+def _install_legacy_consensus_abi(chain_config):
+    """Repair ONLY the in-process SDK ABI after onchain verification.
+
+    No network activity or account changes. No global writes to GitHub/files.
+    """
+    abi = chain_config["abi"]
+    methods = [m for m in abi if m.get("type") == "function" and m.get("name") == "addTransaction"]
+    if len(methods) != 1:
+        raise IncompatibleBradburyProtocol("unknown SDK addTransaction overloads")
+    current_types = [arg.get("type") for arg in methods[0].get("inputs", [])]
+    if current_types not in (OLD_ADD_INPUT_TYPES, ["tuple"]):
+        raise IncompatibleBradburyProtocol("unrecognized SDK consensus ABI")
+    if current_types != OLD_ADD_INPUT_TYPES:
+        # Retain object identity in case gltest creates a second client using
+        # the same SDK chain config singleton.
+        abi[:] = [
+            dict(LEGACY_ADD_ABI) if item is methods[0] else item for item in abi
+        ]
+    return None
+
+
 def require_legacy_bradbury(client):
     """Return fee kwargs for the SDK's *existing* legacy ABI: None, or fail.
 
@@ -89,10 +125,10 @@ def require_legacy_bradbury(client):
 
     abi = ch.get("abi")
     methods = [m for m in abi if m.get("name") == "addTransaction" and m.get("type") == "function"] if isinstance(abi, list) else []
-    if len(methods) != 1 or [v.get("type") for v in methods[0].get("inputs", [])] != [
-        "address", "address", "uint256", "uint256", "bytes", "uint256"
-    ]:
-        raise IncompatibleBradburyProtocol("SDK no longer uses six-argument legacy addTransaction")
+    if len(methods) != 1 or [
+        v.get("type") for v in methods[0].get("inputs", [])
+    ] not in (OLD_ADD_INPUT_TYPES, ["tuple"]):
+        raise IncompatibleBradburyProtocol("unknown SDK consensus ABI; refusing to patch")
 
     _impl(client, CONSENSUS_PROXY, CONSENSUS_IMPLEMENTATION, LEGACY_CONSENSUS_ADD)
     _impl(client, FEE_PROXY, FEE_IMPLEMENTATION, LEGACY_FEE_CALCULATE, MISSING_NEW_GETTERS)
@@ -103,4 +139,8 @@ def require_legacy_bradbury(client):
         raise IncompatibleBradburyProtocol("GenLayer storage price is now active")
     if _read_word(client, FEE_PROXY, GET_VALIDATORS_PER_ROUND, format(0, "064x")) != 5:
         raise IncompatibleBradburyProtocol("unexpected first-round validator count")
-    return None  # Native SDK default legacy path; NEVER an invented feeValue.
+    # The installed 0.19 RC exposes a fee-aware tuple ABI, while the actual
+    # deployed v0.6 ConsensusMain supports the six-input selector. Correct
+    # only this in-memory ABI object after all proxy/price guards pass.
+    _install_legacy_consensus_abi(ch)
+    return None  # SDK's native old path, no guessed deposit or price values.
