@@ -63,13 +63,16 @@ def test_bradbury_real_ghost_refund():
     else:
         raise AssertionError("seller funding receipt missing after 90 seconds")
     print("SE7_PUBLIC_SELLER_FUNDED",txid,flush=True)
+    print("SE7_PUBLIC_STEP DEPLOY_FEE_QUOTE_BEGIN",flush=True)
     q=c.estimate_transaction_fees({"leaderTimeunitsAllocation":100,
          "validatorTimeunitsAllocation":200,
          "executionBudgetPerRound":10**15,
          "totalMessageFees":10**15,"appealRounds":0,"rotations":[3]})
     assert "feeValue" in q and "distribution" in q
     fees={"distribution":q["distribution"],"feeValue":q["feeValue"]}
+    print("SE7_PUBLIC_STEP DEPLOY_FEE_QUOTE_OK",flush=True)
     fac=get_contract_factory(contract_file_path=Path("contracts/semantic_escrow.py").resolve())
+    print("SE7_PUBLIC_STEP DEPLOY_BEGIN",flush=True)
     d=fac.deploy_contract_tx(account=buyer,fees=fees,wait_until="finalized",
                              consensus_max_rotations=3,wait_retries=140,wait_interval=3000)
     ok(d,"DEPLOY")
@@ -82,10 +85,13 @@ def test_bradbury_real_ghost_refund():
     terms=[{"amount_wei":str(VALUE),"delivery_due_at":due,
           "criteria_text":"Bradbury testnet refund verification",
           "criteria_items":[{"id":"delivery","text":"Valid delivery proof","mandatory":True}]}]
+    print("SE7_PUBLIC_STEP CREATE_DEAL_BEGIN",flush=True)
     ok(send(con.create_deal,[seller.address,json.dumps(terms),"phase7-live"],fees,VALUE),"DEAL_FUNDED")
     assert json.loads(con.get_ledger(args=[0]).call())["remaining_locked"]==str(VALUE)
+    print("SE7_PUBLIC_STEP PROPOSE_CANCEL_BEGIN",flush=True)
     ok(send(con.propose_cancel,[0],fees),"CANCEL_PROPOSED")
     before=balance(p,buyer.address)
+    print("SE7_PUBLIC_STEP CONFIRM_CANCEL_BEGIN",flush=True)
     ok(send(con.connect(seller).confirm_cancel,[0],fees),"CANCEL_CONFIRMED")
     rows=json.loads(con.get_transfer_intents(args=[0]).call())
     assert len(rows)==1 and rows[0]["recipient"].lower()==buyer.address.lower()
