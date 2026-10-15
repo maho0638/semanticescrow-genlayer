@@ -92,17 +92,17 @@ class SemanticEscrow(gl.Contract):
 	def _get(self,deal_id:u256):index=B(deal_id);A(0<=index<C(self.deals),'deal does not exist');return index,P(self.deals[index])
 	def _put(self,idx:B,d)->O:self.deals[idx]=F(d)
 	def _role(self,d,expected:str):
-		B=expected;C=Address(gl.message.sender_address).as_hex.lower()
+		B=expected;C=str(gl.message.sender_address).lower()
 		if B==s:A(C in(d[h],d[V]),'not a deal party')
 		else:A(C==d[B],'unauthorized')
 	def _active(self,d):A(d[E]==Ag,'deal terminated');B=d[A2];A(0<=B<C(d[I]),'no active milestone');return B,d[I][B]
 	def _record(self,idx:B,stage:B,round_id:B,outcome:str,reason:str,manifest_sha:str,data)->O:self.decisions.append(F({A3:idx,t:stage,'round':round_id,'outcome':outcome,Ah:reason,AH:manifest_sha,'source_results':data[U],'rubric_results':data[g],'decided_at':J()}))
 	@gl.public.write.payable
 	def create_deal(self,seller:str,milestones_json:str,buyer_nonce:str)->u256:
-		P='buyer_nonce';G=Address(gl.message.sender_address).as_hex.lower()
+		P='buyer_nonce';G=str(gl.message.sender_address).lower()
 		try:recipient=Address(seller).as_hex.lower()
 		except Z:raise gl.vm.UserError('invalid seller address')
-		A(recipient!=G and recipient!='0x'+p*40,'invalid seller');A(m(buyer_nonce,64),'invalid nonce');H=G+':'+buyer_nonce;A(B(self.buyer_nonces.get(H,u256(0)))==0,'duplicate buyer nonce');M=J();N,D=At(milestones_json,M);A(B(gl.message.value)==D,'exact native GEN deposit required');A(B(self.total_locked)<=A8-D,'aggregate locked amount overflow');Q=l({Ai:'SemanticEscrow.v1','chain_id':str(B(gl.message.chain_id)),'contract_address':Address(gl.message.contract_address).as_hex.lower(),h:G,V:recipient,P:buyer_nonce,I:N});O=[]
+		A(recipient!=G and recipient!='0x'+p*40,'invalid seller');A(m(buyer_nonce,64),'invalid nonce');H=G+':'+buyer_nonce;A(B(self.buyer_nonces.get(H,u256(0)))==0,'duplicate buyer nonce');M=J();N,D=At(milestones_json,M);A(B(gl.message.value)==D,'exact native GEN deposit required');A(B(self.total_locked)<=A8-D,'aggregate locked amount overflow');Q=l({Ai:'SemanticEscrow.v1','chain_id':str(B(gl.message.chain_id)),'contract_address':str(gl.message.contract_address).lower(),h:G,V:recipient,P:buyer_nonce,I:N});O=[]
 		for(R,S)in AC(N):O.append({i:S,E:A7 if R==0 else'WAITING',A4:0,u:[],AH:L,AI:L,Aj:L,A5:0,AJ:K,A6:0,AK:[],Ak:L,Ah:L})
 		T={h:G,V:recipient,P:buyer_nonce,E:Ag,d:Q,I:O,A2:0,'opened_at':M,AL:str(D),W:str(D),j:p,X:p,k:L,v:0};idx=C(self.deals);self.deals.append(F(T));self.total_locked=u256(B(self.total_locked)+D);self.buyer_nonces[H]=u256(idx+1);return u256(idx)
 	@gl.public.write
@@ -142,9 +142,9 @@ class SemanticEscrow(gl.Contract):
 	@gl.public.write
 	def assess_challenge(self,deal_id:u256)->str:idx,B=self._get(deal_id);self._role(B,s);D,C=self._active(B);A(C[E]==AP,'no pending challenge');A(J()<C[A6]+AT,'challenge review expired');return self._assess(idx,B,C,c)
 	@gl.public.write
-	def propose_cancel(self,deal_id:u256)->O:idx,B=self._get(deal_id);self._role(B,s);self._active(B);C=J();A(not B[k]or C>=B[v],'cancellation already proposed');B[k]=Address(gl.message.sender_address).as_hex.lower();B[v]=C+A9;self._put(idx,B)
+	def propose_cancel(self,deal_id:u256)->O:idx,B=self._get(deal_id);self._role(B,s);self._active(B);C=J();A(not B[k]or C>=B[v],'cancellation already proposed');B[k]=str(gl.message.sender_address).lower();B[v]=C+A9;self._put(idx,B)
 	@gl.public.write
-	def confirm_cancel(self,deal_id:u256)->O:idx,B=self._get(deal_id);self._role(B,s);self._active(B);C=Address(gl.message.sender_address).as_hex.lower();A(B[k]and C!=B[k],'counterparty confirmation required');A(J()<B[v],'cancellation expired');self._queue_settlement(idx,B,K,cancel=c)
+	def confirm_cancel(self,deal_id:u256)->O:idx,B=self._get(deal_id);self._role(B,s);self._active(B);C=str(gl.message.sender_address).lower();A(B[k]and C!=B[k],'counterparty confirmation required');A(J()<B[v],'cancellation expired');self._queue_settlement(idx,B,K,cancel=c)
 	def _queue_settlement(self,idx:B,d,payout:N,cancel:N=K):
 		G=payout;F,H=self._active(d);D=B(H[i][S])if G else B(d[W]);A(D>0 and D<=B(d[W]),'invalid settlement amount');A(D<=B(self.total_locked),'aggregate locked balance insufficient');self.total_locked=u256(B(self.total_locked)-D);d[W]=str(B(d[W])-D)
 		if G:
