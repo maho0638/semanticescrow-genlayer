@@ -47,9 +47,7 @@ def public_signature_shape(source):
         if not isinstance(cls,ast.ClassDef):continue
         for f in cls.body:
             if not isinstance(f,(ast.FunctionDef,ast.AsyncFunctionDef)):continue
-            if any(isinstance(d,ast.Attribute) and isinstance(d.value,ast.Attribute)
-                  and getattr(d.value.value,"id",None)=="gl"
-                  and d.value.attr=="public" for d in f.decorator_list):
+            if any(ast.unparse(d).startswith("gl.public.") for d in f.decorator_list):
                 shapes[f.name]=[
                   (a.arg,ast.dump(a.annotation) if a.annotation else None)
                   for a in f.args.args
