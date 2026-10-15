@@ -61,14 +61,35 @@ else:
          "EFFECTIVE_GAS_PRICE",integer(receipt.get("effectiveGasPrice")),
          "CONTRACT_ADDRESS",receipt.get("contractAddress"),
          "LOG_COUNT",len(logs),flush=True)
-    known=["NewTransaction(bytes32,address,address,bytes)","CreatedTransaction(bytes32,address,address,bytes)"]
+    known=[
+      "NewTransaction(bytes32,address,address)",
+      "CreatedTransaction(bytes32,uint256)",
+      "TransactionActivated(bytes32,address)",
+      "TransactionAccepted(bytes32)",
+      "TransactionFinalized(bytes32)",
+      "TransactionUndetermined(bytes32)",
+      "TransactionCancelled(bytes32,address)",
+      "TransactionLeaderRevealed(bytes32)",
+      "TransactionReceiptProposed(bytes32,address[])",
+      "TransactionNeedsRecomputation(bytes32[])",
+      "TransactionFinalizationFailed(bytes32)",
+      "InternalMessageProcessed(bytes32,address,address)",
+      "AppealStarted(bytes32,address,uint256,address[])",
+      "VoteCommitted(bytes32,address,bool)",
+      "VoteRevealed(bytes32,address,uint8,bool,uint8)"
+    ]
     sigs={"0x"+keccak(text=k).hex():k.split("(")[0] for k in known}
     for idx,l in enumerate(logs[:20]):
         topic=(l.get("topics") or [""])[0].lower()
         label=sigs.get(topic,"OTHER")
         print("SE7_COMPACT_TX","EVENT",idx,"AT_CONSENSUS",
               str(l.get("address","")).lower()==CONSENSUS.lower(),
-              "TYPE",label,"TOPIC0",topic[:66],flush=True)
+              "TYPE",label,"TOPIC0",topic[:66],
+              "TOPIC1_TXID",str((l.get("topics") or ["",""])[1])[:66]
+                  if len(l.get("topics") or [])>1
+                  and str(l.get("address","")).lower()==CONSENSUS.lower()
+                  else "NOT_APPLICABLE",
+              flush=True)
     if integer(receipt.get("status"))!=1:
         print("SE7_COMPACT_TX","EVM_REVERT_CONFIRMED_DO_NOT_RETRY",flush=True)
     elif not logs:
