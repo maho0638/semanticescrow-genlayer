@@ -4,6 +4,7 @@ on:
     branches: [test/phase7-compact-bradbury-20261015]
     paths:
       - .github/workflows/phase7-build-compact.yml
+      - tests/test_phase7_deploy_preflight.py
 permissions:
   contents: write
 jobs:
