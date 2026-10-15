@@ -45,11 +45,11 @@ def _record(receipt,label):
         from collections import Counter
         import re
         consensus=receipt.get("consensus_data") or {}
-        print("SE_STAGE3_RECEIPT_FIELDS:",[k for k in ("status","status_name","tx_execution_result","tx_execution_result_name","consensus_data","result") if k in receipt],flush=True)
-        print("SE_STAGE3_CONSENSUS_FIELDS:",[k for k in ("leader_receipt","validators","votes","result") if k in consensus],flush=True)
+        print("SE_STAGE4_RECEIPT_FIELDS:",[k for k in ("status","status_name","tx_execution_result","tx_execution_result_name","consensus_data","result") if k in receipt],flush=True)
+        print("SE_STAGE4_CONSENSUS_FIELDS:",[k for k in ("leader_receipt","validators","votes","result") if k in consensus],flush=True)
         records=consensus.get("leader_receipt") or []
         records=[records] if isinstance(records,dict) else records
-        print("SE_STAGE3_EXECUTION_ENUM:",str(receipt.get("tx_execution_result_name",receipt.get("tx_execution_result","UNKNOWN")))[:65],flush=True)
+        print("SE_STAGE4_EXECUTION_ENUM:",str(receipt.get("tx_execution_result_name",receipt.get("tx_execution_result","UNKNOWN")))[:65],flush=True)
         kinds=Counter()
         frames=Counter()
         for lead in records if isinstance(records,list) else []:
@@ -71,8 +71,8 @@ def _record(receipt,label):
                 kind=str(result.get("kind","UNKNOWN")).upper()
                 if kind in ("USER_ERROR","VM_ERROR","RETURN","PANIC","INTERNAL_ERROR"):
                     kinds["GENVM_"+kind]+=1
-        print("SE_STAGE3_ERROR_CLASSES:",dict(kinds),flush=True)
-        print("SE_STAGE3_ERROR_FRAMES:",dict(frames),flush=True)
+        print("SE_STAGE4_ERROR_CLASSES:",dict(kinds),flush=True)
+        print("SE_STAGE4_ERROR_FRAMES:",dict(frames),flush=True)
     assert success, label+" did not execute successfully"
 
 
@@ -83,7 +83,7 @@ def _quorum(receipt,label,addresses=None):
     if addresses is not None:
         assert {str(x).lower() for x in votes}==addresses
     c=Counter(str(x).lower() for x in votes.values())
-    print("SE_STAGE3_VOTES:",label,
+    print("SE_STAGE4_VOTES:",label,
           "agree=",c["agree"],"idle=",c["idle"],"others=",sum(v for k,v in c.items() if k not in ("agree","idle")),flush=True)
     assert c["agree"]>=3 and sum(c.values())==5, "no decisive real Studio validator majority"
     assert set(c).issubset({"agree","idle"}), "unexpected disagreement recorded"
@@ -107,7 +107,7 @@ def test_studio_five_validator_deposit_submit_and_consensus():
     chain=int(rpc.make_request("eth_chainId",[])["result"],16)
     assert chain==int(client.chain.id)==61127
     total=int(rpc.make_request("sim_countValidators",[])["result"])
-    print("SE_STAGE3_CHAIN_ID:",chain,"SE_STAGE3_VALIDATORS:",total,flush=True)
+    print("SE_STAGE4_CHAIN_ID:",chain,"SE_STAGE4_VALIDATORS:",total,flush=True)
     assert total==5,"this is not an actual five-validator local Studio"
 
     # No remote wallet, no actual tokens. Studio allocates disposable funded accounts.
@@ -121,10 +121,17 @@ def test_studio_five_validator_deposit_submit_and_consensus():
     fees=_fees(client)
     context={"genvm_datetime":AT}
     factory=get_contract_factory(contract_file_path=Path("contracts/semantic_escrow.py").resolve())
-    print("SE_STAGE3: DEPLOY_START",flush=True)
-    contract=factory.deploy(account=buyer,transaction_context=context,
-                            consensus_max_rotations=3,fees=fees,wait_until="finalized")
-    print("SE_STAGE3: DEPLOY_FINALIZED",flush=True)
+    print("SE_STAGE4: DEPLOY_START",flush=True)
+    tx=factory.deploy_contract_tx(account=buyer,transaction_context=context,
+                                  consensus_max_rotations=3,fees=fees,wait_until="finalized")
+    _record(tx,"DEPLOY")
+    from gltest.contracts.utils import extract_contract_address
+    contract_addr=extract_contract_address(tx)
+    schema=factory._get_schema_with_fallback()
+    print("SE_STAGE4: SCHEMA_AVAILABLE",schema is not None,flush=True)
+    assert schema is not None,"pinned Studio could not produce GenVM ABI schema"
+    contract=factory.build_contract(contract_address=contract_addr,account=buyer)
+    print("SE_STAGE4: DEPLOY_FINALIZED",flush=True)
     assert int(contract.deal_count().call())==0
     milestones=[
         {"amount_wei":"10","delivery_due_at":DUE,
@@ -145,7 +152,7 @@ def test_studio_five_validator_deposit_submit_and_consensus():
     assert ledger=={"initial_deposit":"25","remaining_locked":"25","payout_queued_total":"0","refund_queued_total":"0"},ledger
     assert json.loads(contract.get_milestone(args=[0,0]).call())["state"]=="AWAITING_DELIVERY"
     assert json.loads(contract.get_milestone(args=[0,1]).call())["state"]=="WAITING"
-    print("SE_STAGE3: CREATE_READBACK_PASS",flush=True)
+    print("SE_STAGE4: CREATE_READBACK_PASS",flush=True)
 
     # The subsequent Studio consensus fixture can set up mocked web/LLM
     # validators, but must NEVER claim a real independent oracle provider.
@@ -163,7 +170,7 @@ def test_studio_five_validator_deposit_submit_and_consensus():
     assert isinstance(registered,list) and len(registered)==5
     addrs={str(v["address"]).lower() for v in registered}
     assert len(addrs)==5
-    print("SE_STAGE3: MOCKED_FIVE_VALIDATORS_READY",flush=True)
+    print("SE_STAGE4: MOCKED_FIVE_VALIDATORS_READY",flush=True)
     evidence=json.dumps([
       {"url":URL_A,"sha256":hashlib.sha256(BODY_A.encode("utf-8")).hexdigest()},
       {"url":URL_B,"sha256":hashlib.sha256(BODY_B.encode("utf-8")).hexdigest()},
@@ -172,7 +179,7 @@ def test_studio_five_validator_deposit_submit_and_consensus():
                     fees,context=context,label="SELLER_SUBMIT_EVIDENCE")
     _quorum(submitted,"SUBMIT",addrs)
     assert json.loads(contract.get_milestone(args=[0,0]).call())["state"]=="SUBMITTED"
-    print("SE_STAGE3: SELLER_SUBMISSION_FINALIZED",flush=True)
+    print("SE_STAGE4: SELLER_SUBMISSION_FINALIZED",flush=True)
 
     evaluated=_send(contract.connect(buyer).assess,[0],fees,context=context,
                     label="INDEPENDENT_CONSENSUS_ASSESSMENT")
@@ -187,7 +194,7 @@ def test_studio_five_validator_deposit_submit_and_consensus():
     final_ledger=json.loads(contract.get_ledger(args=[0]).call())
     assert final_ledger["remaining_locked"]=="25"
     assert final_ledger["payout_queued_total"]=="0"
-    print("SE_STAGE3: FIVE_VALIDATOR_SOURCE_VERDICT_FINALIZED_AND_READBACK",flush=True)
+    print("SE_STAGE4: FIVE_VALIDATOR_SOURCE_VERDICT_FINALIZED_AND_READBACK",flush=True)
 
     assert int(contract.get_total_locked().call())==25
     print("SE_STAGE4: GLOBAL_LOCKED_25_CONFIRMED",flush=True)
