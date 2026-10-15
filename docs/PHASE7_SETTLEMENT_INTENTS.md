@@ -93,3 +93,22 @@ Independent **read-only** public L2 inspection:
 On isolated `test/phase7-windows-bradbury-20261015`, subsequent technical work added robust EVM receipt format checks, additional public step checkpoints, pre-funding live fee-quote and ABI-readback gates, and offline tests. CI https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38756963913 passed **153/153 historical contract regression**, **19 EVM receipt tests**, **2 loopback relay tests**, **3/3 GenVM lint**. These tests are **not** public-network proof and did not spend any more GEN.
 
 Safe release gate: prior to accepting new test GEN, adopt a user-approved locally recoverable test-wallet strategy (e.g. Windows DPAPI-encrypted local backup, with no secret sent to GitHub/ChatGPT), or a tested alternate mechanism that preserves signing availability across failures. Restore signed-test diagnostic granularity without leaking keys. No contract deploy/merge/Portal/main actions authorized by this incident.
+
+## 2026-10-15 — Bradbury fee-estimation failure independently reproduced (zero spend)
+
+User's Windows readonly run showed `BRADBURY POWERSHELL RPC OK: 4221`, then `SE7_PUBLIC_FAILURE_STAGE GET_CURRENT_FEE_POLICY` and `SE7_PUBLIC_FAILURE_CLASS GenLayerError`, before requesting a new test GEN wallet funding.
+
+A separate **public L2 RPC** check, with no keys or value transfer, independently queried the **configured GenLayer-PY Bradbury FeeManager** `0xF205868bf5db79d2162843742D18D0900A9E462a` using method selectors from the SDK's `get_current_fee_policy` implementation. Evidence: https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38760753721 (SUCCESS, read-only).
+
+| View call against Bradbury chain 4221 | Response |
+| --- | --- |
+| `eth_getCode(FeeManager)` | Nonempty deployed code, 1159 bytes |
+| `GENPerTimeUnit()` | Success, 0 |
+| `storageUnitPrice()` | Success, 0 |
+| `quoteGasPrice()` | JSON-RPC error code 3 |
+| `messageFeeParamsBudgetFloor()` | JSON-RPC error code 3 |
+| `eth_gasPrice` | Success |
+
+SDK source: https://github.com/genlayerlabs/genlayer-py/blob/main/genlayer_py/contracts/actions.py , `get_current_fee_policy` near lines 615–666. It requires all four getters when a FeeManager is configured, therefore an error in the third method prevents the fee estimate. The pinned `genlayer-py==0.19.0rc2` fee-policy interface appears incompatible with this deployed Bradbury FeeManager. **RPC error code 3 alone does not establish whether the selector is missing, the contract reverts for another reason, or a network-specific precondition fails**. These must not be conflated with Cloudflare's separate 403 transport challenge (the user's PowerShell transport already overcame that).
+
+**BLOCKER:** Do not retry arbitrary zero-cost fee configurations or pretend these results validate the current protocol version; GenLayer contract deploy and value-bearing child refund still need verified fee policy, ABI and execution. Official SDK/network deployment compatibility confirmation or a supported legacy fee-policy path is needed. No test GEN was transferred in the readonly reproduction. Local tests passing cannot certify Bradbury receipt credit.
