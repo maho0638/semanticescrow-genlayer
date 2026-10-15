@@ -55,7 +55,7 @@ jobs:
         shell: bash
         run: |
           set -uo pipefail
-          gltest tests/test_studio_phase3.py -v -s --network localnet -c pyproject.toml > /tmp/se-studio-private.log 2>&1
+          gltest tests/test_studio_phase3.py -v -s --network localnet > /tmp/se-studio-private.log 2>&1
           code=$?
           python - <<'PY'
           from pathlib import Path
