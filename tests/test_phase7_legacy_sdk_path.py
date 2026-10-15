@@ -39,5 +39,5 @@ def test_native_sdk_default_uses_verified_legacy_selector_without_fee_policy():
     assert decoded[1].lower() == seller.address.lower()
     assert decoded[2] == 5
     assert decoded[3] == 3
-    assert decoded[4] == b"\\x12\\x34"
+    assert decoded[4] == bytes.fromhex("1234")
     assert decoded[5] == 0
