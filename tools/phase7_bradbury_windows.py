@@ -2,8 +2,9 @@
 import datetime, os, re, subprocess, sys, time
 from pathlib import Path
 import requests
+from phase7_windows_rpc_bridge import PowerShellRpcBridge
 from eth_account import Account
-URL="https://rpc-bradbury.genlayer.com"
+URL=None
 END_AFTER=50*60
 FUND_MIN=2*10**18
 
@@ -17,10 +18,15 @@ def rpc(method,params):
     return data.get("result")
 
 def main():
-    print("CHECKING BRADBURY RPC...",flush=True)
+    global URL
+    import atexit
+    bridge = PowerShellRpcBridge()
+    URL = bridge.start()
+    atexit.register(bridge.close)
+    print("CHECKING BRADBURY RPC VIA LOCAL POWERSHELL...",flush=True)
     result=rpc("eth_chainId",[])
     assert isinstance(result,str) and int(result,16)==4221,"Wrong network"
-    print("BRADBURY RPC OK: 4221",flush=True)
+    print("BRADBURY POWERSHELL RPC OK: 4221",flush=True)
     buyer,seller=Account.create(),Account.create()
     expires=datetime.datetime.now(datetime.timezone.utc)+datetime.timedelta(seconds=END_AFTER)
     print("SEND ONLY BRADBURY TEST GEN TO THIS NEW ADDRESS:",flush=True)
