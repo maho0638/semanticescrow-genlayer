@@ -22,6 +22,12 @@ def test_seller_transfer_happens_after_confirmed_deploy_and_deal():
     assert indices==sorted(indices)
     assert len(set(indices))==len(indices)
 
+def test_real_bradbury_gate_uses_current_funded_buyer_and_finalization():
+    src=EXTERNAL.read_text(encoding="utf-8")
+    assert "checked=preview_deploy(c,fac.contract_code,buyer.address)" in src
+    assert "passed=is_finalized_success(receipt) and tx_execution_succeeded(receipt)" in src
+
+
 def test_no_unconditional_private_key_logging_or_duplicate_retries():
     src=EXTERNAL.read_text(encoding="utf-8")
     assert 'BUYER.key' in src
