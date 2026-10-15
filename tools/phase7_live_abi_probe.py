@@ -19,6 +19,7 @@ SIGNATURES=[
  "calculateRoundFees((uint256,uint256,uint256,uint256,uint256,uint256,uint256[]),uint256,uint256)",
  "addTransaction(address,address,uint256,uint256,bytes)",
  "addTransaction(address,address,uint256,uint256,bytes,uint256)",
+ "legacy-sdk-selector-diagnostic",
  "getCurrentFeePolicy()",
 ]
 session=requests.Session()
@@ -57,10 +58,10 @@ for label,addr in [("FEE",FEE),("CONS",CONS)]:
     if isinstance(objcode,str):
         hexcode=objcode.lower()[2:]
         for sig in SIGNATURES:
-            sel=selector(sig)
+            sel= "0x35a251fb" if sig=="legacy-sdk-selector-diagnostic" else selector(sig)
             found[sig]=sel[2:] in hexcode
     for sig,hit in found.items():
-        print("SE7_ABI",label,"SIGNATURE",sig,"SELECTOR",selector(sig),
+        print("SE7_ABI",label,"SIGNATURE",sig,"SELECTOR",sel,
               "IN_BYTECODE",hit,flush=True)
 if True:
     sig="getValidatorsPerRound(uint256)"
