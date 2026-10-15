@@ -279,9 +279,12 @@ class SemanticEscrow(gl.contract.Contract):
     deals: DynArray[str]
     decisions: DynArray[str]
     buyer_nonces: TreeMap[str, u256]
+    # Sum of unqueued escrow liabilities across every active deal.
+    # Outbound transfer intents are not counted as recipient credits.
+    total_locked: u256
 
     def __init__(self):
-        pass
+        self.total_locked = u256(0)
 
     def _get(self, deal_id: u256):
         index = int(deal_id)
@@ -327,6 +330,8 @@ class SemanticEscrow(gl.contract.Contract):
         now = now_sec()
         terms, total = parse_terms(milestones_json, now)
         fail_unless(int(gl.message.value) == total, "exact native GEN deposit required")
+        fail_unless(int(self.total_locked) <= MAX_U256 - total,
+                    "aggregate locked amount overflow")
         term_hash = json_hash({
             "domain": "SemanticEscrow.v1", "chain_id": str(int(gl.message.chain_id)),
             "contract_address": Address(gl.message.contract_address).as_hex.lower(),
@@ -352,6 +357,7 @@ class SemanticEscrow(gl.contract.Contract):
         }
         idx = len(self.deals)
         self.deals.append(canonical(d))
+        self.total_locked = u256(int(self.total_locked) + total)
         self.buyer_nonces[key] = u256(idx + 1)
         return u256(idx)
 
@@ -493,6 +499,9 @@ class SemanticEscrow(gl.contract.Contract):
         i, m = self._active(d)
         amount = int(m["terms"]["amount_wei"]) if payout else int(d["remaining_locked"])
         fail_unless(amount > 0 and amount <= int(d["remaining_locked"]), "invalid settlement amount")
+        fail_unless(amount <= int(self.total_locked), "aggregate locked balance insufficient")
+        # Account for the transfer once; per-deal and global liabilities both decrease.
+        self.total_locked = u256(int(self.total_locked) - amount)
         # Set terminal state and accounting BEFORE scheduling finality-only transfer.
         d["remaining_locked"] = str(int(d["remaining_locked"]) - amount)
         if payout:
@@ -571,6 +580,16 @@ class SemanticEscrow(gl.contract.Contract):
             if record["deal_id"] == idx and record["milestone_index"] == i and record["round"] == n:
                 return text
         raise gl.vm.UserError("no assessment exists")
+
+    @gl.public.view
+    def get_total_locked(self) -> u256:
+        """Globally unqueued liabilities, not verified on-chain recipient credit."""
+        return self.total_locked
+
+    @gl.public.write.payable
+    def __receive__(self) -> None:
+        """Reject accidental value-only transfers; forced EVM transfers remain possible."""
+        raise gl.vm.UserError("unsolicited GEN not credited to escrow")
 
     @gl.public.view
     def get_ledger(self, deal_id: u256) -> str:
