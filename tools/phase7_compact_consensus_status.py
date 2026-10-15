@@ -31,6 +31,19 @@ try:
         triggered=obj.get("triggered_transactions")
         print("SE7_GENLAYER","TRIGGERED_TX_COUNT",len(triggered) if isinstance(triggered,list) else "UNKNOWN",flush=True)
 except Exception as exc:
+    import re, traceback
     print("SE7_GENLAYER","READ_FAILED_CLASS",type(exc).__name__,flush=True)
+    # This diagnostic has NO wallet and ONLY public read-only RPC calls.
+    # Avoid echoing arbitrary RPC payloads or 64-hexbyte fields anyway.
+    msg=re.sub(r"0x[0-9a-fA-F]{32,}","0x[public_hex]",str(exc))
+    safe="".join(c if 32<=ord(c)<127 else " " for c in msg)
+    print("SE7_GENLAYER","PUBLIC_ERROR_SUMMARY",safe[:450],flush=True)
+    for tb in traceback.extract_tb(exc.__traceback__)[-8:]:
+        print("SE7_GENLAYER","ERROR_FRAME",tb.filename.rsplit("/",1)[-1].rsplit("\\",1)[-1],
+              tb.name,tb.lineno,flush=True)
     caused=exc.__cause__
-    if caused is not None:print("SE7_GENLAYER","READ_CAUSE_CLASS",type(caused).__name__,flush=True)
+    if caused is not None:
+        print("SE7_GENLAYER","READ_CAUSE_CLASS",type(caused).__name__,flush=True)
+        caused_msg=re.sub(r"0x[0-9a-fA-F]{32,}","0x[public_hex]",str(caused))
+        print("SE7_GENLAYER","CAUSE_SUMMARY",
+              "".join(c if 32<=ord(c)<127 else " " for c in caused_msg)[:300],flush=True)
