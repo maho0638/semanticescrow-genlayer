@@ -25,6 +25,38 @@ if os.environ.get("SEMANTICESCROW_SDK_0_2_EMULATION") == "1":
     loader.import_calldata = _legacy_cd
     loader.import_address = lambda: _legacy_types().Address
     loader.import_lazy = lambda: _legacy_types().Lazy
+    from gltest.direct.vm import VMContext
+
+    def _refresh_legacy_message(self):
+        # v0.2's gl.message is an immutable namedtuple imported once from
+        # stdin; gltest 0.30 synchronizes only the v0.3 message module.
+        import sys
+        old_gl = sys.modules.get("genlayer.gl")
+        if old_gl is None or not hasattr(old_gl, "MessageType"):
+            return
+        A = _legacy_types().Address
+        U = _legacy_types().u256
+        def as_address(value):
+            if value is None:
+                return A(bytes(20))
+            if isinstance(value, A):
+                return value
+            if hasattr(value, "as_bytes"):
+                return A(value.as_bytes)
+            return A(value)
+        payload = {
+            "contract_address": as_address(self._contract_address),
+            "sender_address": as_address(self.sender),
+            "origin_address": as_address(self.origin),
+            "value": U(self._value),
+            "chain_id": U(self._chain_id),
+        }
+        old_gl.message = old_gl.MessageType(**payload)
+        msg_mod = sys.modules.get("genlayer._internal.msg")
+        if msg_mod is not None and isinstance(getattr(msg_mod, "message_raw", None), dict):
+            msg_mod.message_raw.update(payload)
+
+    VMContext._refresh_gl_message = _refresh_legacy_message
 
 os.environ.setdefault("GENVM_PREBUILT_DIR", str(Path(__file__).resolve().parents[1] / "vendor"))
 
