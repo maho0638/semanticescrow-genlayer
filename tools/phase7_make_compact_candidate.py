@@ -45,7 +45,11 @@ def main():
         remove_annotations=False,
         remove_literal_statements=True,
         hoist_literals=True,
-        rename_globals=False,
+        rename_globals=True,
+        preserve_globals=sorted({
+            "SemanticEscrow","gl","Address","u256","DynArray","TreeMap",
+            "hashlib","json","datetime","timezone","str"
+        }|set(exported.keys())),
         rename_locals=True,
         preserve_locals=sorted(preserved),
         constant_folding=True,
@@ -61,7 +65,7 @@ def main():
     ast.parse(compact)
     if exported_shape(compact)!=exported:
         raise RuntimeError("ABI signature differs after code compaction")
-    if len(compact.encode())>=19_000:
+    if len(compact.encode())>=17_000:
         raise RuntimeError("Candidate is not small enough for size lab")
     TARGET.write_text(compact,encoding="utf-8")
     print("SE7_COMPACT","ORIGINAL_BYTES",len(original.encode()),flush=True)
