@@ -118,6 +118,11 @@ for candidate in variants:
                   ",".join(sorted(set(shape)-set(SIGNATURES))),flush=True)
             print("SE7_SIZE",tag,"ALTERED_SIGNATURES",
                   ",".join(sorted(m for m in set(shape)&set(SIGNATURES) if shape[m]!=SIGNATURES[m])),flush=True)
+            for method in sorted(set(shape)&set(SIGNATURES)):
+                if shape[method]!=SIGNATURES[method]:
+                    print("SE7_SIZE",tag,"METHOD",method,
+                          "BEFORE",repr(SIGNATURES[method]),
+                          "AFTER",repr(shape[method]),flush=True)
             continue
         payload=serialize([source,calldata.encode(make_calldata_object(method=None,args=None,kwargs=None)),False])
         data=_encode_add_transaction_data(client,type("Pub",(),{"address":FROM})(),
