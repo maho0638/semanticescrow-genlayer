@@ -7,6 +7,7 @@ on:
       - '.github/workflows/phase7-compact-genvm-studio.yml'
       - 'contracts/semantic_escrow.py'
       - 'tests/test_studio_phase3.py'
+      - 'gltest.config.yaml'
   workflow_dispatch:
 permissions:
   contents: read
@@ -72,6 +73,14 @@ jobs:
           markers=['AssertionError','ValueError','TypeError','AttributeError','ImportError',
                    'ModuleNotFoundError','DeploymentError','TransactionError','TimeoutError',
                    'ConnectionError','FileNotFoundError','FAILED','ERROR','Traceback']
+          # Safe diagnostic for CLI validation failures: redact all hex, URLs,
+          # auth values and private-key-looking fields; avoid full log dumps.
+          if len(lines)<=8:
+              for line in lines:
+                  safe=re.sub(r'0x[0-9A-Fa-f]{30,}','[REDACTED_HEX]',line)
+                  safe=re.sub(r'https?://\\S+','[URL]',safe)
+                  safe=re.sub(r'(?i)(private_key|secret|api_key|token)\\s*[=:]\\s*\\S+','[REDACTED]',safe)
+                  print('STUDIO_CLI_VALIDATION:',safe[:190])
           print('STUDIO_TEST_ERROR_CLASSES:',[p for p in markers if any(p in line for line in lines)])
           print('STUDIO_TEST_HEADING:')
           count=0
