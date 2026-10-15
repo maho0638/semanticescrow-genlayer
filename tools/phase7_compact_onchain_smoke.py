@@ -1,5 +1,7 @@
 """Read-only preflight for current packed SemanticEscrow; no signing nor GEN."""
 from pathlib import Path
+import sys
+sys.path.insert(0,str(Path(__file__).resolve().parent))
 from eth_account import Account
 from genlayer_py.chains.testnet_bradbury import testnet_bradbury
 from genlayer_py.client.genlayer_client import GenLayerClient
