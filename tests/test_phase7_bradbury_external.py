@@ -40,37 +40,6 @@ def test_bradbury_real_ghost_refund():
     buyer=get_default_account()
     seller=next(a for a in get_accounts() if a.address.lower()==SELLER.address.lower())
     assert buyer.address.lower()==BUYER.address.lower()
-    # Fund the second temporary signer: verify EVM receipt and beneficiary
-    # balance effect, not a single fragile string literal for status.
-    print("SE7_PUBLIC_STEP SELLER_GAS_FUNDING_BEGIN",flush=True)
-    before_seller=balance(p,seller.address)
-    nonce=int(query(p,"eth_getTransactionCount",[buyer.address,"pending"]),16)
-    gas_price=int(query(p,"eth_gasPrice",[]),16)
-    signed=Account.sign_transaction({"nonce":nonce,"to":seller.address,"value":10**16,
-                                    "gas":21000,"gasPrice":gas_price,"chainId":4221},BUYER.key)
-    txid=query(p,"eth_sendRawTransaction",[signed.raw_transaction.to_0x_hex()])
-    print("SE7_PUBLIC_GAS_TRANSFER_SUBMITTED",txid,flush=True)
-    for _ in range(45):
-        receipt=query(p,"eth_getTransactionReceipt",[txid])
-        if receipt:
-            print("SE7_PUBLIC_GAS_RECEIPT_STATUS",
-                  str(receipt.get("status","MISSING"))[:24],flush=True)
-            # Balance reads can lag transaction receipt; wait for credited wei.
-            for __ in range(20):
-                after_seller=balance(p,seller.address)
-                if after_seller-before_seller>=10**16:
-                    break
-                time.sleep(3)
-            else:
-                raise AssertionError("funded seller balance not credited")
-            verify_confirmed_value_transfer(receipt, txid, seller.address)
-            print("SE7_PUBLIC_GAS_TRANSFER_CREDIT_VERIFIED",
-                  str(after_seller-before_seller),flush=True)
-            break
-        time.sleep(2)
-    else:
-        raise AssertionError("seller funding receipt missing after 90 seconds")
-    print("SE7_PUBLIC_SELLER_FUNDED",txid,flush=True)
     print("SE7_PUBLIC_STEP VERIFIED_LEGACY_NO_FEE_ESTIMATE",flush=True)
     fac=get_contract_factory(contract_file_path=Path("contracts/semantic_escrow.py").resolve())
     print("SE7_PUBLIC_STEP SCHEMA_LOOKUP_BEGIN",flush=True)
@@ -110,6 +79,39 @@ def test_bradbury_real_ghost_refund():
     assert json.loads(con.get_ledger(args=[0]).call())["remaining_locked"]==str(VALUE)
     print("SE7_PUBLIC_STEP PROPOSE_CANCEL_BEGIN",flush=True)
     ok(send(con.propose_cancel,[0],fees),"CANCEL_PROPOSED")
+    # Avoid funding seller before signed deploy and buyer escrow operations
+    # succeed. This prevents wasting 0.01 test GEN on repeated deploy failures.
+    # Fund the second temporary signer: verify EVM receipt and beneficiary
+    # balance effect, not a single fragile string literal for status.
+    print("SE7_PUBLIC_STEP SELLER_GAS_FUNDING_BEGIN",flush=True)
+    before_seller=balance(p,seller.address)
+    nonce=int(query(p,"eth_getTransactionCount",[buyer.address,"pending"]),16)
+    gas_price=int(query(p,"eth_gasPrice",[]),16)
+    signed=Account.sign_transaction({"nonce":nonce,"to":seller.address,"value":10**16,
+                                    "gas":21000,"gasPrice":gas_price,"chainId":4221},BUYER.key)
+    txid=query(p,"eth_sendRawTransaction",[signed.raw_transaction.to_0x_hex()])
+    print("SE7_PUBLIC_GAS_TRANSFER_SUBMITTED",txid,flush=True)
+    for _ in range(45):
+        receipt=query(p,"eth_getTransactionReceipt",[txid])
+        if receipt:
+            print("SE7_PUBLIC_GAS_RECEIPT_STATUS",
+                  str(receipt.get("status","MISSING"))[:24],flush=True)
+            # Balance reads can lag transaction receipt; wait for credited wei.
+            for __ in range(20):
+                after_seller=balance(p,seller.address)
+                if after_seller-before_seller>=10**16:
+                    break
+                time.sleep(3)
+            else:
+                raise AssertionError("funded seller balance not credited")
+            verify_confirmed_value_transfer(receipt, txid, seller.address)
+            print("SE7_PUBLIC_GAS_TRANSFER_CREDIT_VERIFIED",
+                  str(after_seller-before_seller),flush=True)
+            break
+        time.sleep(2)
+    else:
+        raise AssertionError("seller funding receipt missing after 90 seconds")
+    print("SE7_PUBLIC_SELLER_FUNDED",txid,flush=True)
     before=balance(p,buyer.address)
     print("SE7_PUBLIC_STEP CONFIRM_CANCEL_BEGIN",flush=True)
     ok(send(con.connect(seller).confirm_cancel,[0],fees),"CANCEL_CONFIRMED")
