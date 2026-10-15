@@ -34,7 +34,10 @@ def _patch_nondet_for_current_sdk(vm):
     if getattr(vm, "_gltest_direct_mode_patched", False):
         return
 
-    from genlayer.types import Lazy
+    try:
+        from genlayer.types import Lazy
+    except ModuleNotFoundError:
+        from genlayer.py.types import Lazy
 
     def require_picklable_roundtrip(function, label):
         # The upstream Direct Mode helper only warns when cloudpickle fails.
@@ -73,15 +76,16 @@ def _patch_nondet_for_current_sdk(vm):
 
 
 def _allocate_contract_current_layout(contract_cls, vm, *args, **kwargs):
-    # Preserve Direct Mode storage allocation using the pinned SDK builder.
-    from genlayer.storage import ROOT_SLOT_ID, Root
-    from genlayer.storage._internal.generate import (
-        ORIGINAL_INIT_ATTR,
-        _storage_build,
-        _BuilderCtx,
-    )
-
-    descriptor = _storage_build(_BuilderCtx.empty(), contract_cls)
+    # Support both SDK storage ABIs in Direct Mode. Bradbury uses 0.2.16,
+    # while the original 0.3 compact branch uses _BuilderCtx.
+    try:
+        from genlayer.storage import ROOT_SLOT_ID, Root
+        from genlayer.storage._internal.generate import ORIGINAL_INIT_ATTR, _storage_build, _BuilderCtx
+        descriptor = _storage_build(_BuilderCtx.empty(), contract_cls)
+    except ModuleNotFoundError:
+        from genlayer.py.storage import ROOT_SLOT_ID, Root
+        from genlayer.py.storage._internal.generate import ORIGINAL_INIT_ATTR, _storage_build
+        descriptor = _storage_build(contract_cls, {})
     Root.MANAGER = vm._storage
     slot = vm._storage.get_store_slot(ROOT_SLOT_ID)
     instance = descriptor.get(slot, 0)
@@ -100,7 +104,10 @@ _original_load_module = loader._load_module
 
 
 def _load_module_reset_contract_registration(contract_path):
-    genvm_contracts = importlib.import_module("genlayer.contract")
+    try:
+        genvm_contracts = importlib.import_module("genlayer.contract")
+    except ModuleNotFoundError:
+        genvm_contracts = importlib.import_module("genlayer.gl.genvm_contracts")
     genvm_contracts.__known_contract__ = None
     return _original_load_module(contract_path)
 
@@ -110,7 +117,10 @@ loader._load_module = _load_module_reset_contract_registration
 
 
 def _patch_nondet_current_sdk():
-    vm = importlib.import_module("genlayer.vm")
+    try:
+        vm = importlib.import_module("genlayer.vm")
+    except ModuleNotFoundError:
+        vm = importlib.import_module("genlayer.gl.vm")
     _patch_nondet_for_current_sdk(vm)
 
 

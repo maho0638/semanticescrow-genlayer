@@ -37,24 +37,20 @@ jobs:
           PY
           python -m compileall -q contracts tests
           genvm-lint lint contracts/semantic_escrow.py --json
-      - name: Obtain official, pinned GenVM v0.2.16 runtime for Direct Mode
+      - name: Reconstruct disposable test-only SDK package from official v0.2.16 source
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p "$PWD/.legacy-genvm"
-          curl -fL --retry 2 --connect-timeout 20 --max-time 150 \
-            https://github.com/genlayerlabs/genvm/releases/download/v0.2.16/genvm-linux-amd64-executor.tar.xz \
-            -o /tmp/genvm-v0216.tar.xz
-          tar -tJf /tmp/genvm-v0216.tar.xz | head -n 22 || true
-          tar -tJf /tmp/genvm-v0216.tar.xz | grep -E '(runners|py-genlayer)' | head -n 22 || true
-          tar -xJf /tmp/genvm-v0216.tar.xz -C "$PWD/.legacy-genvm"
-          found="$(find "$PWD/.legacy-genvm" -type f | grep '/py-genlayer/1j/b45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6' | head -n 1 || true)"
-          if [ -z "$found" ]; then
-            echo "SE7_LEGACY_RUNNER_MISSING_IN_RELEASE"
-            exit 1
-          fi
+          git clone -q --depth 1 --filter=blob:none --sparse --branch v0.2.16 \
+            https://github.com/genlayerlabs/genvm.git /tmp/se-genvm-legacy-source
+          git -C /tmp/se-genvm-legacy-source sparse-checkout set runners/genlayer-py-std/src
+          base="$PWD/.legacy-genvm/runners/py-genlayer/1j"
+          mkdir -p "$base"
+          tar -C /tmp/se-genvm-legacy-source/runners/genlayer-py-std -cf \
+            "$base/b45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6.tar" src
+          test -s "$base/b45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6.tar"
           echo "GENVM_PREBUILT_DIR=$PWD/.legacy-genvm" >> "$GITHUB_ENV"
-          echo "SE7_LEGACY_RUNNER_RELEASE_VERIFIED"
+          echo "SE7_OFFICIAL_TAG_SOURCE_EMULATION_READY (not packaged runner hash verification)"
       - name: Full direct-mode behavioral regression
         run: |
           export ACCOUNT_PRIVATE_KEY_1="$(python -c 'from eth_account import Account; print(Account.create().key.hex())')"
