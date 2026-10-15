@@ -17,6 +17,11 @@ def test_native_sdk_default_uses_verified_legacy_selector_without_fee_policy():
     )
     # This is exactly the selector found on Bradbury's deployed consensus
     # implementation 0x0a2c393975da79505ed930efc55ae4aeb88b0d62.
+    signature = client.w3.eth.contract(
+        abi=client.chain.consensus_main_contract["abi"]
+    ).get_function_by_name("addTransaction").signature
+    print("SE7_SDK_ADD_SIGNATURE",signature,flush=True)
+    print("SE7_SDK_ENCODED_SELECTOR",calldata[:10],flush=True)
     assert calldata[:10].lower() == "0xe71d5196"
     assert isinstance(calldata,str)
     assert len(calldata)>300
