@@ -586,11 +586,6 @@ class SemanticEscrow(gl.contract.Contract):
         """Globally unqueued liabilities, not verified on-chain recipient credit."""
         return self.total_locked
 
-    @gl.public.write.payable
-    def __receive__(self) -> None:
-        """Reject accidental value-only transfers; forced EVM transfers remain possible."""
-        raise gl.vm.UserError("unsolicited GEN not credited to escrow")
-
     @gl.public.view
     def get_ledger(self, deal_id: u256) -> str:
         _, d = self._get(deal_id)

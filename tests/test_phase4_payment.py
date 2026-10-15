@@ -265,11 +265,23 @@ def test_queued_outflow_is_not_claimed_as_recipient_credit(direct_vm,direct_depl
     assert int(c.get_total_locked())==0
 
 
-def test_unsolicited_native_value_reverts_without_becoming_escrow(direct_vm,direct_deploy):
-    c=deploy(direct_vm,direct_deploy)
-    direct_vm.sender=ATTACKER
-    direct_vm.value=19
-    with direct_vm.expect_revert("unsolicited GEN not credited to escrow"):
-        c.__receive__()
-    assert int(c.get_total_locked())==0
-    assert int(c.deal_count())==0
+def test_only_create_deal_accepts_native_gen_without_public_receive_handler():
+    # Exact pinned get_schema() rejects *any* public method starting '__'.
+    # Do not implement @gl.public.write.payable __receive__ until the SDK ABI
+    # and the real Studio support this special method. No-method inbound native
+    # sends cannot silently add to the escrow ledger.
+    import ast
+    from pathlib import Path
+    tree=ast.parse(Path(CONTRACT).read_text(encoding="utf-8"))
+    cls=next(x for x in tree.body if isinstance(x,ast.ClassDef)
+             and x.name=="SemanticEscrow")
+    methods={f.name:f for f in cls.body if isinstance(f,ast.FunctionDef)}
+    assert "__receive__" not in methods
+    payable=[]
+    for name,fn in methods.items():
+        for dec in fn.decorator_list:
+            if (isinstance(dec,ast.Attribute) and dec.attr=="payable"
+                    and isinstance(dec.value,ast.Attribute)
+                    and dec.value.attr=="write"):
+                payable.append(name)
+    assert payable==["create_deal"]
