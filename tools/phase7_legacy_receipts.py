@@ -11,10 +11,11 @@ import time
 from pathlib import Path
 from types import MethodType
 from web3 import Web3
-from genlayer_py.types import (
-    TRANSACTION_STATUS_NUMBER_TO_NAME,
-    EXECUTION_RESULT_NUMBER_TO_NAME,
-)
+# The pinned genlayer-py==0.19.0rc2 does not export the newer enum maps.
+# These legacy v0.6 values are independently checked against raw contract
+# getters. Undecided statuses/results may be polled but NEVER become success.
+STATUS_LABELS={5:"ACCEPTED",7:"FINALIZED"}
+EXECUTION_LABELS={0:"NOT_FINISHED",1:"FINISHED_WITH_RETURN",2:"FINISHED_WITH_ERROR"}
 
 BRADBURY_DATA = "0x85D7bf947A512Fc640C75327A780c90847267697"
 _ABI = json.loads(Path(__file__).with_name("phase7_legacy_consensus_data_abi.json").read_text(encoding="utf-8"))
@@ -48,10 +49,10 @@ def decode_bradbury_transaction(tx_id, data, all_record):
     execution=int(all_record[1])
     if status!=int(all_record[3]):
         raise LegacyReceiptError("legacy transaction status mismatch")
-    status_name=TRANSACTION_STATUS_NUMBER_TO_NAME.get(str(status))
-    execution_name=EXECUTION_RESULT_NUMBER_TO_NAME.get(str(execution))
-    if status_name is None or execution_name is None:
+    if not 0<=status<=8 or execution not in EXECUTION_LABELS:
         raise LegacyReceiptError("unknown legacy consensus status/result")
+    status_name=STATUS_LABELS.get(status,"NOT_DECIDED")
+    execution_name=EXECUTION_LABELS[execution]
     destination=str(data[2])
     if not Web3.is_address(destination) or Web3.to_checksum_address(destination)=="0x0000000000000000000000000000000000000000":
         raise LegacyReceiptError("missing/invalid consensus recipient")
