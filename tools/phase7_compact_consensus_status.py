@@ -65,6 +65,31 @@ for label,signature,argument_hex in [
               (len(output_default)-2)//2 if isinstance(output_default,str)
                    and output_default.startswith("0x") else 0,flush=True)
 
+# Instrument only read-only chain queries. Never send signed transactions.
+original_request = client.provider.make_request
+def observe(method, params):
+    if method == "eth_call" and isinstance(params,(list,tuple)) and params:
+        tx=params[0] if isinstance(params[0],dict) else {}
+        data=str(tx.get("data") or tx.get("input") or "")
+        print("SE7_GENLAYER","SDK_CALL_BEGIN",
+              "TO",str(tx.get("to",""))[:50],
+              "SELECTOR",data[:10],
+              "GAS",str(tx.get("gas","DEFAULT"))[:25],flush=True)
+    try:
+        response=original_request(method,params)
+    except Exception as exc:
+        print("SE7_GENLAYER","SDK_CALL_FAILURE",
+              "METHOD",str(method),"CLASS",type(exc).__name__,
+              "TO",str(params[0].get("to",""))[:50]
+                if method=="eth_call" and isinstance(params,(list,tuple))
+                    and params and isinstance(params[0],dict) else "N/A",
+              "SELECTOR",str(params[0].get("data",""))[:10]
+                if method=="eth_call" and isinstance(params,(list,tuple))
+                    and params and isinstance(params[0],dict) else "N/A",
+              flush=True)
+        raise
+    return response
+client.provider.make_request=observe
 try:
     obj=client.get_transaction(TX_ID)
     if not isinstance(obj,dict):
