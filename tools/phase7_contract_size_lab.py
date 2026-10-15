@@ -88,7 +88,7 @@ for tag,diff in [
                           "rename_globals":True,
                           "preserve_globals":sorted({
                               "SemanticEscrow","gl","Address","u256","DynArray","TreeMap",
-                              "hashlib","json","datetime","timezone"
+                              "hashlib","json","datetime","timezone","str"
                           }|set(SIGNATURES.keys())),
                           "hoist_literals":True,"constant_folding":True,
                           "remove_dead_branches":True,
