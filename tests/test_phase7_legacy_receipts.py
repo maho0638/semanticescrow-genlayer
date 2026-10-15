@@ -7,7 +7,7 @@ from eth_utils import to_checksum_address
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"tools"))
 from phase7_legacy_receipts import (
     decode_bradbury_transaction,install_legacy_bradbury_reader,
-    LegacyReceiptError,BRADBURY_DATA,
+    LegacyReceiptError,BRADBURY_DATA,is_finalized_success,
 )
 
 TXID="0x"+"ab"*32
@@ -31,6 +31,19 @@ def test_verified_deploy_receipt_success_codes_and_address():
     assert receipt["status_name"]=="ACCEPTED"
     assert receipt["tx_execution_result_name"]=="FINISHED_WITH_RETURN"
     assert receipt["triggered_transactions"]==[]
+
+def test_strict_finality_gate_rejects_accepted_and_failed_execution():
+    def decoded(status,execution):
+        raw,all_record=samples(status=status,execution=execution)
+        return decode_bradbury_transaction(TXID,raw,all_record)
+    assert not is_finalized_success(decoded(5,1))
+    assert not is_finalized_success(decoded(5,2))
+    assert not is_finalized_success(decoded(7,2))
+    assert is_finalized_success(decoded(7,1))
+    assert not is_finalized_success({**decoded(7,1),"status_name":"ACCEPTED"})
+    assert not is_finalized_success({**decoded(7,1),"tx_execution_result_name":"FINISHED_WITH_ERROR"})
+    assert not is_finalized_success(None)
+
 
 def test_real_prior_bradbury_error_must_stay_error():
     raw,entire=samples(execution=2)
