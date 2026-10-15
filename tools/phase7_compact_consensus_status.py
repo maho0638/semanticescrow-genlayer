@@ -85,6 +85,19 @@ try:
           "RESULT",raw[8] if len(raw)>8 else "N/A",
           "EXECUTION_RESULT",all_data[0][1] if isinstance(all_data[0],(list,tuple)) else "N/A",
           "CAN_FINALIZE",str(can)[:200],flush=True)
+    try:
+        from genlayer_py.types import GenLayerRawTransaction
+        legacy_tx=GenLayerRawTransaction.from_transaction_data(raw)
+        legacy_tx.tx_execution_result=all_data[0][1]
+        decoded=legacy_tx.decode()
+        print("SE7_GENLAYER","LEGACY_SDK_DECODE_OK",True,
+              "STATUS",decoded.get("status_name"),
+              "EXECUTION",decoded.get("tx_execution_result_name"),
+              "DEPLOY_DATA_TYPE",str((decoded.get("tx_data_decoded") or {}).get("type")),
+              flush=True)
+    except Exception as decode_exc:
+        print("SE7_GENLAYER","LEGACY_SDK_DECODE_FAIL_CLASS",
+              type(decode_exc).__name__,flush=True)
     if len(raw)>2 and isinstance(raw[2],str):
         ghost_code=client.w3.eth.get_code(raw[2])
         print("SE7_GENLAYER","GHOST_CODE_BYTES",len(ghost_code),flush=True)
