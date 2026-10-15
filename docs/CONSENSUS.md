@@ -33,3 +33,6 @@ See [security boundaries](SECURITY.md) and official [Equivalence Principle](http
 
 ## Pinned runner compatibility (phase 3)
 The vendored py-genlayer runner pinned in this repository exposes `gl.vm.run_nondet`, but **not** `run_nondet_unsafe`. The latter produced a real Studio `AttributeError` during `assess`. The implementation uses `run_nondet` with a validator that catches its own exceptions and returns `False` on mismatch. Both functions have the same intended no-extra-validator-sandbox model for this pinned runner; this does not change escrow policy. Verify with Phase-3 Studio receipts, not by lint alone.
+
+## Phase-5 source-budget correctness
+The original manifest remains 2–5 sources. The losing-party challenge has its **own** bounded 1–2 new host-and-digest commitments, including when the original manifest already has 5. Validators re-fetch and re-hash all 3–7 original plus supplemental sources. Hash uniqueness does not establish source authority or real publisher independence. The original decision and rubric are immutable and independent protocol appeals are a distinct layer.

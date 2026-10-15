@@ -31,3 +31,5 @@ At `PAYOUT_QUEUED` the next `WAITING` milestone becomes `AWAITING_DELIVERY`; oth
 **Boundary precedence**: for the same pinned `now`, time-based expiration wins at `>= deadline`; challenge, submission and assessment require `< deadline`. A challenged outcome cannot spawn another challenge. A `settle` before the relevant deadline MUST fail without side effect.
 
 **Version rule**: v1 intentionally has no partial payout, split arbitration, milestone edits, deadline extensions, penalty fees, court-grade guarantees, privileged bailout, or auto-retry of external transfer. No assumptions beyond these rules should be imported by implementation.
+
+**Phase-5 clarification:** An original 5-source submission cannot consume the one legal challenge: the challenge has a **separate 1–2 source budget** (maximum combined 7). All supplemental hosts and SHA-256 content digests must differ from the original set. The losing party must still challenge before the exclusive 48-hour cutoff. The committed hash of the challenge justification is retained; raw justification is not publicly stored. The single challenge cannot be replaced, extended, or replayed.

@@ -22,6 +22,7 @@ CHALLENGE_REVIEW_TTL = 7 * DAY
 MAX_SOURCE_BYTES = 6000
 MIN_SOURCES = 2
 MAX_SOURCES = 5
+MAX_CHALLENGE_SOURCES = 2  # additive sources; initial 5 must not block appeals
 
 
 def fail_unless(ok: bool, message: str) -> None:
@@ -449,7 +450,7 @@ class SemanticEscrow(gl.contract.Contract):
         fail_unless(not m["challenge_used"], "challenge already used")
         fail_unless(now_sec() < m["assessed_at"] + CHALLENGE_TTL, "challenge window expired")
         fail_unless(valid_text(justification, 512), "challenge note invalid")
-        supplement = parse_manifest(supplemental_manifest_json, 1, MAX_SOURCES - len(m["manifest"]))
+        supplement = parse_manifest(supplemental_manifest_json, 1, MAX_CHALLENGE_SOURCES)
         existing_hosts = [normalize_url(x["url"])[1] for x in m["manifest"]]
         existing_hashes = [x["sha256"] for x in m["manifest"]]
         for x in supplement:

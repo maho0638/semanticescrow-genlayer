@@ -32,7 +32,7 @@ An approved assessment enters `APPROVE_PENDING`, rejected enters `REJECT_PENDING
 
 ## Challenges, deadlines and settlement
 
-- During `APPROVE_PENDING`, only buyer may challenge; during `REJECT_PENDING`, only seller may challenge. At most **one** contract challenge per milestone. Challenger commits supplemental manifest containing at least one new verified SHA-256 fingerprint and a bounded justification; frozen rubric does not change.
+- During `APPROVE_PENDING`, only buyer may challenge; during `REJECT_PENDING`, only seller may challenge. At most **one** contract challenge per milestone. Challenger commits an additional 1–2 source HTTPS manifest with new unique hostnames and SHA-256 commitments, even when the original manifest already contains its full 5 sources; the combined maximum is 7 sources. The 512-byte bounded justification is hash-committed; the frozen rubric does not change.
 - Challenged stage `CHALLENGED` can be independently reassessed within 7 days. New `APPROVED`/`REJECTED` result becomes `CHALLENGE_APPROVE_PENDING`/`CHALLENGE_REJECT_PENDING`; `INCONCLUSIVE` or transient unavailability leaves challenged state until expiry. The original decision and challenge record remain append-only.
 - If challenge assessment times out, settlement follows the **initial verdict** rather than allowing a baseless challenge to reverse the result; this is the explicit ex-ante fallback. After a successful challenge assessment, `settle` can execute without another contract challenge window. Network-level protocol appeals still apply before outbound transfers finalize.
 - No first assessment before `submitted_at + 7 days` ⇒ refund remaining locked funds. No evidence submitted by `delivery_due_at + 48h` ⇒ refund remaining locked funds.
