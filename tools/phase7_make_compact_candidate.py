@@ -48,7 +48,7 @@ def main():
         rename_globals=True,
         preserve_globals=sorted({
             "SemanticEscrow","gl","Address","u256","DynArray","TreeMap",
-            "hashlib","json","datetime","timezone","str"
+            "hashlib","json","datetime","timezone","str","verdict_prompt"
         }|set(exported.keys())),
         rename_locals=True,
         preserve_locals=sorted(preserved),
