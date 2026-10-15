@@ -1,4 +1,4 @@
-# Threat model, money invariants and release gates — Phase 1
+# Threat model, money invariants and release gates — phases 1–6
 
 ## Protected assets
 
@@ -22,7 +22,7 @@ Buyer deposit, locked milestone balances, seller payout, buyer refund, frozen ru
 | Threat | Required defense / limitation |
 |---|---|
 | Forged evidence or changing HTML | hash response **bytes**, bounded bodies, immutable manifest; hash still does NOT authenticate issuer |
-| SSRF / DNS rebinding / malicious redirects | reject unsafe URL/IP and all redirects; need concrete GenVM egress enforcement proof; regex alone insufficient, **release blocker** |
+| SSRF / DNS rebinding / malicious redirects | Phase 6 parser rejects known dynamic-IP DNS suffixes (`nip.io`, `sslip.io`, etc.), IP-looking literals, and unsafe syntax; **no DNS lookup, redirect destination, IP pinning, or external resolver verification has been proven**. Must enforce at actual GenVM egress network boundary: **production-release blocker**. |
 | Prompt-injected source | quote/control-bound untrusted material, independent validator checking, no obeying remote instructions; not formally guaranteed |
 | Validator split, idle, timeout, model outage | no business state write on failed consensus; available retry within deadline; `INCONCLUSIVE` not same as network failure |
 | Buyer disputes good result without proof | at most one contract challenge; supplemental unique hash; 7-day timeout returns to original decision |
@@ -31,7 +31,7 @@ Buyer deposit, locked milestone balances, seller payout, buyer refund, frozen ru
 | Duplicate payout, refund/transfer racing | per-IC sequential transactions, terminal intent state, single debit/emission; test repeated calls and boundary times |
 | Locked funds due to inactive party | permissionless deterministic `settle`, fixed deadlines, pre-agreed fallback policies; no automatic cron |
 | Value lost in failed child/external transfer | no automatic return; verify receipts/recipient credit; **production release blocked until safe recovery path is demonstrated** |
-| Unexpected ETH/GEN direct funding | reject unsolicited value via `__receive__` if callable, monitor unsolicited ghost funding that cannot be prevented at EVM level |
+| Unexpected direct GEN funding | Pinned GenVM ABI rejects a public `__receive__` method; **only `create_deal` is payable**. Forced/external GEN transfers are NOT a deposit on any deal and cannot be prevented solely by this code. No assertion of recipient-credit reconciliation. |
 | EVM recipients with reverting fallback | prefer frozen wallet EOA recipients, but EOAness cannot be assumed from address syntax; test/verify and retain release blocker |
 
 ## Release gates, explicitly NOT done in Phase 1
@@ -43,4 +43,4 @@ Buyer deposit, locked milestone balances, seller payout, buyer refund, frozen ru
 - EVM-layer outbound value receipt status and downstream failure recovery / monitoring. A protocol `FINALIZED` return is **insufficient**.
 - Independent professional audit and threat assessment for any real monetary value.
 
-**Stage-1 architectural checks do NOT assert a secure production contract.**
+**Phase-6 Direct Mode security and local consensus tests are not a production audit.** The GenVM network, ghost/EVM transfer, recipient credit and independent publisher authenticity remain unverified release gates.
