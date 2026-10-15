@@ -21,3 +21,5 @@ No claim is made that a hosted RPC supports each proposed implementation path un
 12. [GenVM Configuration](https://docs.genlayer.com/validators/genvm-configuration): network module TLD and host allow/deny rules belong in validator-host web module config; need actual runtime validation.
 13. [Prompt Injection](https://docs.genlayer.com/developers/intelligent-contracts/security-and-best-practices/prompt-injection): input restriction, output schema and contract guardrails are mitigations, not a mathematical guarantee that models resist a malicious prompt.
 14. [nip.io / sslip.io operator documentation](https://nip.io/): dynamically resolve hostnames containing arbitrary IP addresses, so source names must not be assumed publicly routable solely from hostname syntax.
+
+15. [Consensus v0.6 Migration](https://docs.genlayer.com/developers/consensus-v06-migration): production-like deployment requires one coherent v0.6 RC family, actual fee profiles and network-specific SDK support; Phase 6 used pinned local Studio v0.123 only and did not prove public hosted network compatibility.

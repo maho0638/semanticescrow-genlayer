@@ -1,6 +1,6 @@
 # SemanticEscrow — executable security matrix through Phase 6
 
-**Evidence:** 142 Direct Mode tests, 3 GenVM lint checks, 18,203 static design assertions, 2,000 model scenarios. Latest verified Direct Mode run: https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38709393039. Older five-validator Studio fund/review/challenge/payout/refund tests were run in stages 3–5. Phase-6 poisoned-source Studio run is separately tracked in https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38709210875; do not claim PASS until its final GitHub conclusion is checked.
+**Evidence:** 142 Direct Mode tests, 3 GenVM lint checks, 18,203 static design assertions, 2,000 model scenarios. Latest verified Direct Mode run: https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38709393039. Older five-validator Studio fund/review/challenge/payout/refund tests were run in stages 3–5. Phase-6 poisoned-source Studio run: **SUCCESS** https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38709210875 (confirmed complete; 3 agree/2 idle, changed SHA source never pays, objective timeout queues refund).
 
 | ID | Category | Evidence status |
 | --- | --- | --- |
@@ -23,7 +23,7 @@
 | P6-01 | Known dynamic-IP mapping hostnames, ambiguous URLs and Unicode directionality | Direct Mode PASS |
 | P6-02 | Reject HTTP partial/redirect/non-200 responses as verified; transient source errors retry | Direct Mode PASS |
 | P6-03 | Malformed, additional, NaN, duplicate-key LLM output never alters state | Direct Mode PASS |
-| P6-04 | Validator re-fetch disagrees on status/digest or model decision | Direct Mode PASS |
+| P6-04 | Validator re-fetch disagrees on status/digest or model decision | Direct Mode PASS; five-validator local poisoned-source INCONCLUSIVE and expiry refund PASS |
 | P6-05 | Injection characters are framed as untrusted; beneficiary stays immutable | Direct Mode PASS for deterministic guards, NOT proof an actual LLM resists injection |
 
 **No real GEN spent; no user wallets, main merge, Portal submission or public deployment.** A network-hosted, external multi-provider and EVM receipt audit is a separate risk and cannot be substituted with successful mocks.
