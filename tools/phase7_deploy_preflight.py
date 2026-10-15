@@ -80,18 +80,22 @@ def _build_payload(client,source,sender):
     return raw
 
 
-def preview_deploy(client,source):
-    """Read-only exactly encoded deploy, gas estimate and padded simulation."""
+def preview_deploy(client,source,sender=PUBLIC_READONLY_SENDER):
+    """Read-only deploy preview; use actual funded sender before signing.
+
+    Default historical sender is ONLY for an unfunded network preflight.
+    The signed integration test MUST pass its own funded buyer address.
+    """
     provider=client.provider
-    payload=_build_payload(client,source,PUBLIC_READONLY_SENDER)
+    payload=_build_payload(client,source,sender)
     block=_rpc(provider,"eth_getBlockByNumber",["latest",False])
     if not isinstance(block,dict):
         raise DeployPreviewError("unavailable latest block")
     limit=_hex(block["gasLimit"])
     base=_hex(block["baseFeePerGas"])
-    bal=_hex(_rpc(provider,"eth_getBalance",[PUBLIC_READONLY_SENDER,"latest"]))
-    nonce=_rpc(provider,"eth_getTransactionCount",[PUBLIC_READONLY_SENDER,"latest"])
-    tx={"from":PUBLIC_READONLY_SENDER, "to":CONSENSUS_PROXY,
+    bal=_hex(_rpc(provider,"eth_getBalance",[sender,"latest"]))
+    nonce=_rpc(provider,"eth_getTransactionCount",[sender,"latest"])
+    tx={"from":sender, "to":CONSENSUS_PROXY,
         "data":payload, "value":"0x0","nonce":nonce,"chainId":"0x107d",
         "maxFeePerGas":hex(base+PRIORITY_FEE_WEI),
         "maxPriorityFeePerGas":hex(PRIORITY_FEE_WEI)}
