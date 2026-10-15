@@ -1,0 +1,86 @@
+name: SemanticEscrow Phase 3 Real Studio five-validator audit
+on:
+  push:
+    branches: [test/phase3-five-validators-20261015]
+    paths:
+      - '.ci/studio-v123-compose.yml'
+      - '.github/workflows/phase3-studio.yml'
+      - 'contracts/semantic_escrow.py'
+      - 'tests/test_studio_phase3.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  studio-five-validator:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      COMPOSE_PARALLEL_LIMIT: '1'
+      COMPOSE: .ci/studio-v123-compose.yml
+      PROJECT: se123ci
+      SEMANTICESCROW_RUN_STUDIO: '1'
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.12'
+      - name: Install pinned SDK and Studio test harness
+        run: |
+          python -m pip install genlayer-test==0.30.0rc2 genvm-linter==0.11.0 cloudpickle==3.1.2 pytest==9.1.1
+          python -m pip check
+          genvm-lint lint contracts/semantic_escrow.py --json
+      - name: Validate disposable official Studio stack
+        run: |
+          docker version
+          docker compose -p "$PROJECT" -f "$COMPOSE" config --quiet
+          test "$(docker compose -p "$PROJECT" -f "$COMPOSE" config --services | wc -l)" -eq 6
+      - name: Pull pinned Studio 0.123 images
+        run: docker compose -p "$PROJECT" -f "$COMPOSE" pull
+      - name: Bring up full local consensus
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose -p "$PROJECT" -f "$COMPOSE" up -d consensus-worker
+          for attempt in $(seq 1 36); do
+            state="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' se123ci-consensus-worker-1)"
+            echo "STUDIO_STARTUP_ATTEMPT=$attempt STATE=$state"
+            if [ "$state" = healthy ]; then exit 0; fi
+            if [ "$state" = unhealthy ] || [ "$state" = exited ]; then exit 1; fi
+            sleep 10
+          done
+          exit 1
+      - name: Execute five validator independent Studio localnet tests
+        shell: bash
+        run: |
+          set -uo pipefail
+          gltest tests/test_studio_phase3.py -v -s --network localnet -c pyproject.toml > /tmp/se-studio-private.log 2>&1
+          code=$?
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          lines=Path('/tmp/se-studio-private.log').read_text(errors='replace').splitlines()
+          for line in lines:
+              if 'SE_STAGE3' in line:
+                  row=line.split('SE_STAGE3',1)[1].split('{')[0]
+                  row=re.sub(r'0x[0-9A-Fa-f]{40,}','[WALLET]',row)
+                  print('STUDIO_CHECKPOINT:',row[:240])
+          for line in lines[-60:]:
+              line=line.strip()
+              if line.startswith(('E ', 'E   ', 'FAILED tests/', '=== 1 passed','=== 1 failed')):
+                  # Never print receipts, private keys, validator configs, API tokens.
+                  safe=line.split('{')[0].split('receipt=')[0]
+                  safe=re.sub(r'0x[0-9A-Fa-f]{40,}','[REDACTED]',safe)
+                  safe=re.sub(r'(?i)(secret|api.key|private.key|token)\s*[=:]\s*\S+','[REDACTED]',safe)
+                  print('STUDIO_RESULT:',safe[:250])
+          PY
+          exit "$code"
+      - name: Summarize local DB transaction states
+        if: always()
+        shell: bash
+        run: |
+          docker exec se123ci-postgres-1 psql -U postgres -d genlayer_state -At -c "SELECT status, count(*) FROM transactions GROUP BY status ORDER BY status" || true
+      - name: Stop and erase disposable stack
+        if: always()
+        run: docker compose -p "$PROJECT" -f "$COMPOSE" down --volumes --remove-orphans || true
