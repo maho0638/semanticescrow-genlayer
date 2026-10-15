@@ -46,9 +46,9 @@ def main():
         env_preflight.pop("ACCOUNT_PRIVATE_KEY_2",None)
     if check.returncode!=0:
         failures=sorted(set(re.findall(
-            r"\\b(?:AssertionError|RuntimeError|TimeoutError|ImportError|"
-            r"AttributeError|ValueError|KeyError|ConnectionError)\\b",
-            (check.stdout or "")+"\\n"+(check.stderr or ""))))
+            r"\b(?:AssertionError|RuntimeError|TimeoutError|ImportError|"
+            r"AttributeError|ValueError|KeyError|ConnectionError)\b",
+            (check.stdout or "")+"\n"+(check.stderr or ""))))
         print("SDK READ-ONLY PREFLIGHT FAILED:",",".join(failures) or "unclassified",flush=True)
         print("DO NOT SEND GEN. RECHECK SDK/RPC CONFIGURATION.",flush=True)
         return 4
