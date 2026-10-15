@@ -1,6 +1,6 @@
 # SemanticEscrow — GenLayer Intelligent Contract
 
-**Status (2026-10-15): Stage 1 architecture, Stage 2 implementation and Stage 3 local five-validator Studio integration VERIFIED. This is still a pre-release, NOT an audited or production-safe payment service.**
+**Status (2026-10-15): Stages 1–4 verified for their scoped architecture, Direct Mode and LOCAL five-validator integration. The contract is still PRE-RELEASE: live EVM recipient credit and failed-transfer recovery are NOT proved; NOT an audited or production-safe financial service.**
 
 A standalone, reusable native GEN milestone escrow primitive for GenLayer. The buyer funds 1–5 immutable milestones. The seller submits SHA-256 committed HTTPS evidence, leader and validators independently fetch/classify under a frozen rubric, and the application records an approval/rejection/inconclusive assessment. One losing-party challenge can trigger another independent evaluation. Deterministic expiry, settlement and mutual cancellation queue GEN value transfers **only for protocol finalization**. A queued transfer is not proof of recipient credit.
 
@@ -9,6 +9,7 @@ A standalone, reusable native GEN milestone escrow primitive for GenLayer. The b
 - [Contract implementation](contracts/semantic_escrow.py)
 - [Stage 2 independent CI evidence and remaining release gates](docs/PHASE2_VERIFICATION.md)
 - [Stage 3 verified five-validator local Studio consensus, corrected GenVM API and exact boundaries](docs/PHASE3_VERIFICATION.md)
+- [Stage 4 independent financial ledger audit, 39 tests, payout/refund local Studio receipts and unresolved production limits](docs/PHASE4_PAYMENT_SECURITY.md)
 - [Repeatable GenVM linter and Direct Mode tests](.github/workflows/phase2-contract.yml)
 - [Direct Mode contract regression tests](tests/test_phase2_contract.py)
 - [Immutable design and security assumptions](docs/ARCHITECTURE.md)
@@ -41,6 +42,7 @@ The `delivery_due_at` value above is **only an illustrative Unix timestamp**; re
 - **Phase 1:** architecture/identity/immutability/state/payment invariants documented and statically checked.
 - **Phase 2:** Python GenVM implementation, input guards, deterministic ledger and challenged verdicts implemented, SDK dependency blobs copied byte-for-byte with matching Git SHA, 23 Direct Mode tests and linter PASS.
 - **Phase 3 VERIFIED on disposable local Studio:** exact local GenVM deploy; payable two-milestone deal; seller-signed evidence submission; five-registered-validator assessment and post-finality readback. Studio recorded 3 agree/2 idle in each consensus-checked write and four FINALIZED transactions. Only deterministic mock web/LLM data was used; [CI evidence](https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38666863852).
+- **Stage 4 LOCAL integration verified:** a five-validator Studio run finalized the first 10 wei payment intent and remaining 15 wei refund intent, with correct after-finality state readbacks and global liability declining 25→15→0. Studio 3 agree/2 idle quorum. [Studio CI](https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38700525100). [39-test finance CI](https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38701136694).
 - **Still NOT verified:** actual payout/refund recipient credit, downstream EVM transfer failure recovery, realistic live external-source authenticity, DNS/redirect egress restrictions, independent security audit, public Studio Dev/mainnet deploy. Local Studio cannot certify live EVM recipient credit.
 - `main` remains only the initial bootstrap, no PR merge or Portal submission has been made for SemanticEscrow, no public deploy or real GEN spent.
 

@@ -1,15 +1,17 @@
 # SemanticEscrow — Phase 4 financial safety verification (2026-10-15)
 
-**Status:** Direct Mode and lint verified; real five-validator payout/refund settlement integration **IN PROGRESS**. This report intentionally does not claim that recipient GEN credit, failed external transfers, or production fund security have been verified.
+**Status: PHASE 4 LOCAL TECHNICAL VERIFICATION COMPLETE.** Direct Mode, GenVM lint and real five-validator payout/refund intent finalization **SUCCESS**. This report does NOT claim actual beneficiary GEN credit, resolved failed external transfers, or production-grade fund security.
 
 ## Branch, test baseline and provenance
 
 - Repository: https://github.com/maho0638/semanticescrow-genlayer
 - Isolated branch: `audit/phase4-payment-refund-safety-20261015` — no merge into `main`.
-- Financial safety CI: **39 PASS, 0 failed (subject to recheck after removing incompatible public fallback)**, GenVM lint **3 PASS**, architecture static model **18,203 assertions / 2,000 abstract scenarios**: https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38698597328.
+- **Final financial CI:** 39 PASS / 0 FAIL, GenVM lint 3 PASS, 18,203 static design assertions and 2,000 abstract ledger scenarios: https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38701136694; tested commit `01ebbdf194347bdcd8c55b010f57050b39aa8a73`.
 - Prior **real local 5-validator** positive assessment at Phase 3: https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38666863852 (3/5 agree, 2 idle; finalized state readback).
-- Initial five-validator integration failed with GenVM ABI schema retrieval on an incompatible public `__receive__`; see https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38697966876. The corrected phase-4 integration has a fresh run; do not claim it passed until the final receipt checks.
+- Initial Studio attempts exposed (a) an unsupported public `__receive__` ABI method and (b) a test-only import path issue. Both corrected. Earlier failed CI runs remain visible; see https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38697966876 and https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38699354219.
 - Python 3.12, pinned `genvm-linter==0.11.0`, `genlayer-test==0.30.0rc2`, mocked/local GEN only.
+
+- **Final real five-validator Studio:** SUCCESS https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38700525100.
 
 ## New stage-4 implementation (read actual source)
 
@@ -32,6 +34,24 @@ Tests under `tests/test_phase4_payment.py` supplement original 23 contract tests
 - Static source inspection confirms only `create_deal` is public/payable; the incompatible public fallback is absent. No unsupported claim is made about forced EVM sends.
 - `remaining_locked + total_payout_queued + total_refund_queued == initial_deposit` on every modeled deal; global `total_locked` equals sum of all deals' remaining obligations.
 
+## Independently observed five-validator local Studio settlement path
+
+The successful final GitHub job explicitly showed:
+
+| Verification checkpoint | Observation |
+|---|---|
+| Studio network | Local chain ID 61127, exactly five validator identities |
+| Deployment and ABI | Deploy success, contract schema retrieved, on-chain state read |
+| Exact deposit | 25 simulated wei funds locked, active/queued milestones read back |
+| Seller submission and independent classification | Submitted evidence finalized; assessment APPROVED, two integrity-VERIFIED sources |
+| Payment after challenge window | 10 wei `PAYOUT_QUEUED`, remaining liability 15 wei |
+| Future milestone expires | 15 wei `REFUND_QUEUED`; combined queued intents 25 wei; `total_locked=0` |
+| Validator receipts | CREATE, SUBMIT, ASSESS, PAYOUT, REFUND: **3 agree, 2 idle** each |
+| Database | Eight transactions FINALIZED, including related child messages; do **not** misreport eight as independent signed parent writes |
+| Overall job | **SUCCESS**, ephemeral Docker environment removed |
+
+These payments are **LOCAL SIMULATED transfer intents** and not live EVM transfer confirmations. GenLayer documentation explains that external EVM messages finalize through ghost contracts, which Studio does not implement fully, and failed value transfers are not always refunded automatically.
+
 ## Financial safety limitations — do not erase or misrepresent
 
 The contract queues EVM external GEN transfers on protocol finalization. A `FINALIZED` parent, `PAYOUT_QUEUED`, or `REFUND_QUEUED` is **not an independently verified EVM recipient credit**. Live ghost-contract `handleOp()`, actual downstream receipt status, fee sufficiency, reverting receivers, and any failed-message recovery path have **not been proved**.
@@ -42,4 +62,4 @@ URLs and source ownership, real publisher independence, DNS/redirect/SRRF egress
 
 ## User instruction boundary
 
-**This is Stage 4 only.** No new Stage-5 dispute design, Portal resubmission, merge into GitHub `main`, real GEN spending, external deploy, or user wallet operations. Final Studio results must be recorded honestly before closing stage 4.
+**Stage 4 CLOSED at the LOCAL technical-verification boundary.** No Stage 5 changes, Portal resubmission, GitHub main merge, real GEN spending, external deploy or user-wallet transactions. The remaining production-release gaps are explicitly not certified.
