@@ -21,6 +21,33 @@ def test_invalid_headroom_fails_closed(est,limit):
     with pytest.raises(DeployPreviewError):
         padded_gas(est,limit)
 
+def test_funded_signer_preview_uses_actual_address(monkeypatch):
+    import phase7_deploy_preflight as mod
+    sender="0x1111111111111111111111111111111111111111"
+    seen=[]
+    def encode(client,source,addr):
+        assert source=="fixture"
+        assert addr==sender
+        return "0xe71d5196"+"00"*32
+    monkeypatch.setattr(mod,"_build_payload",encode)
+    def rpc(method,params):
+        seen.append((method,params))
+        if method=="eth_getBlockByNumber":
+            return {"result":{"gasLimit":hex(100_000_000),"baseFeePerGas":"0x1"}}
+        if method=="eth_getBalance":return {"result":hex(10**18)}
+        if method=="eth_getTransactionCount":return {"result":"0x0"}
+        if method=="eth_estimateGas":return {"result":hex(13_000_000)}
+        if method=="eth_call":return {"result":"0x"}
+        raise AssertionError("unexpected method "+method)
+    client=SimpleNamespace(provider=SimpleNamespace(make_request=rpc))
+    result=mod.preview_deploy(client,"fixture",sender)
+    assert result["estimated_gas"]==13_000_000
+    assert ("eth_getBalance",[sender,"latest"]) in seen
+    assert ("eth_getTransactionCount",[sender,"latest"]) in seen
+    assert any(method=="eth_estimateGas" and args[0]["from"]==sender for method,args in seen)
+    assert any(method=="eth_call" and args[0]["from"]==sender for method,args in seen)
+
+
 def test_scoped_interception_only_pads_verified_consensus_selector():
     seen=[]
     def req(method,params):
