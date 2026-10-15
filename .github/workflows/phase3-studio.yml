@@ -66,6 +66,26 @@ jobs:
                   row=line.split('SE_STAGE3',1)[1].split('{')[0]
                   row=re.sub(r'0x[0-9A-Fa-f]{40,}','[WALLET]',row)
                   print('STUDIO_CHECKPOINT:',row[:240])
+          import collections
+          print('STUDIO_TEST_LOG_LINES:',len(lines))
+          markers=['AssertionError','ValueError','TypeError','AttributeError','ImportError',
+                   'ModuleNotFoundError','DeploymentError','TransactionError','TimeoutError',
+                   'ConnectionError','FileNotFoundError','FAILED','ERROR','Traceback']
+          print('STUDIO_TEST_ERROR_CLASSES:',[p for p in markers if any(p in line for line in lines)])
+          print('STUDIO_TEST_HEADING:')
+          count=0
+          for line in lines[:90]:
+              line=line.strip()
+              if not line or any(x in line.lower() for x in ('private_key','node_config','mnemonic','secret','token=','api_key','mock_llm','mock_response')):
+                  continue
+              if ('SE_STAGE3' not in line and not any(x in line for x in ('Error','FAILED','Exception','Traceback','ImportError','ModuleNotFoundError','platform','test session','collected','INFO:', 'ERROR', 'FAIL','warning', 'INTERNALERROR', 'test_studio_phase3'))):
+                  continue
+              line=line.split('{')[0].split('receipt=')[0].split('=b"')[0]
+              line=re.sub(r'0x[0-9A-Fa-f]{20,}','[REDACTED_HEX]',line)
+              print('STUDIO_LOG_BRIEF:',line[:240])
+              count+=1
+              if count>=22:
+                  break
           for line in lines[-60:]:
               line=line.strip()
               if line.startswith(('E ', 'E   ', 'FAILED tests/', '=== 1 passed','=== 1 failed')):
