@@ -254,7 +254,7 @@ def test_unavailable_challenge_cannot_pay_or_change_verdict(direct_vm,direct_dep
     direct_vm.mock_web(r"proof-a\.example",{"status":503,"body":""})
     direct_vm.mock_web(r"proof-b\.example",{"status":503,"body":""})
     direct_vm.mock_web(r"proof-c\.example",{"status":503,"body":""})
-    with direct_vm.expect_revert("unavailable evidence; retry"):
+    with direct_vm.expect_revert("challenge evidence unavailable; retry"):
         c.assess_challenge(x)
     assert stage(c)["state"]=="CHALLENGED"
     assert stage(c)["first_verdict"]=="APPROVED"
