@@ -9,7 +9,7 @@ import pytest
 
 from gltest.direct import loader, sdk_loader, wasi_mock
 
-os.environ["GENVM_PREBUILT_DIR"] = str(Path(__file__).resolve().parents[1] / "vendor")
+os.environ.setdefault("GENVM_PREBUILT_DIR", str(Path(__file__).resolve().parents[1] / "vendor"))
 
 
 

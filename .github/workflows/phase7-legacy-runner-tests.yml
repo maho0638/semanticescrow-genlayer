@@ -6,6 +6,7 @@ on:
       - 'contracts/semantic_escrow.py'
       - 'tools/phase7_schema_compat.py'
       - 'tests/test_phase5_disputes.py'
+      - 'tests/conftest.py'
       - '.github/workflows/phase7-legacy-runner-tests.yml'
 permissions:
   contents: read
@@ -36,9 +37,26 @@ jobs:
           PY
           python -m compileall -q contracts tests
           genvm-lint lint contracts/semantic_escrow.py --json
+      - name: Obtain official, pinned GenVM v0.2.16 runtime for Direct Mode
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$PWD/.legacy-genvm"
+          curl -fL --retry 2 --connect-timeout 20 --max-time 150 \
+            https://github.com/genlayerlabs/genvm/releases/download/v0.2.16/genvm-linux-amd64.tar.xz \
+            -o /tmp/genvm-v0216.tar.xz
+          tar -tJf /tmp/genvm-v0216.tar.xz | grep -E '(runners|py-genlayer)' | head -n 12 || true
+          tar -xJf /tmp/genvm-v0216.tar.xz -C "$PWD/.legacy-genvm"
+          found="$(find "$PWD/.legacy-genvm" -type f | grep '/py-genlayer/1j/b45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6' | head -n 1 || true)"
+          if [ -z "$found" ]; then
+            echo "SE7_LEGACY_RUNNER_MISSING_IN_RELEASE"
+            exit 1
+          fi
+          echo "GENVM_PREBUILT_DIR=$PWD/.legacy-genvm" >> "$GITHUB_ENV"
+          echo "SE7_LEGACY_RUNNER_RELEASE_VERIFIED"
       - name: Full direct-mode behavioral regression
         run: |
           export ACCOUNT_PRIVATE_KEY_1="$(python -c 'from eth_account import Account; print(Account.create().key.hex())')"
           export ACCOUNT_PRIVATE_KEY_2="$(python -c 'from eth_account import Account; print(Account.create().key.hex())')"
-          python -m pytest -q tests/test_phase2_contract.py tests/test_phase4_payment.py tests/test_phase5_disputes.py tests/test_phase6_adversarial.py tests/test_phase7_intents.py
+          python -m pytest -q --maxfail=1 tests/test_phase2_contract.py tests/test_phase4_payment.py tests/test_phase5_disputes.py tests/test_phase6_adversarial.py tests/test_phase7_intents.py
           python -m pytest -q tests/test_phase7_legacy_compat.py tests/test_phase7_schema_compat.py tests/test_phase7_deploy_preflight.py tests/test_phase7_legacy_sdk_path.py tests/test_phase7_rpc_diagnostics.py tests/test_phase7_evm_receipt.py tests/test_phase7_windows_relay.py
