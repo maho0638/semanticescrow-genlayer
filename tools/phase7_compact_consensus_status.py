@@ -55,6 +55,15 @@ for label,signature,argument_hex in [
     u8=(int(output,16) if isinstance(output,str) and size==32 else None)
     print("SE7_GENLAYER","DIRECT",label,"ERROR",error,"RETURN_BYTES",size,
           "WORD",u8 if label.startswith("STATUS_") else "HIDDEN",flush=True)
+    if label in ("STATUS_CURRENT","GET_DATA_CURRENT","GET_ALL_DATA"):
+        # SDK's web3 contract call omits explicit gas; compare to the above
+        # identical call that intentionally sets a 10M eth_call gas budget.
+        output_default, error_default = raw_rpc("eth_call",[
+            {"to":data_addr,"data":"0x"+selector+argument_hex}, "latest"])
+        print("SE7_GENLAYER","DEFAULT_GAS",label,
+              "ERROR",error_default,"RETURN_BYTES",
+              (len(output_default)-2)//2 if isinstance(output_default,str)
+                   and output_default.startswith("0x") else 0,flush=True)
 
 try:
     obj=client.get_transaction(TX_ID)
