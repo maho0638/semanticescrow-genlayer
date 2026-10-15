@@ -30,6 +30,8 @@ for name,url in RPCS:
              "SCHEMA_FIELDS",",".join(fields[:18]),
              "SCHEMA_METHODS",
              len(result.get("methods",[])) if isinstance(result,dict) and isinstance(result.get("methods"),(dict,list)) else "N/A",
+             "METHODS_TYPE",type(result.get("methods")).__name__ if isinstance(result,dict) else "N/A",
+             "METHOD_NAMES",",".join(sorted(str(k) for k in result.get("methods",{}).keys())) if isinstance(result,dict) and isinstance(result.get("methods"),dict) else "N/A",
              "CODE_BYTES",len(CODE),
              "CODE_SHA256",hashlib.sha256(CODE).hexdigest(),
              flush=True)
