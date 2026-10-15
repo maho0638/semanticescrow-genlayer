@@ -7,6 +7,7 @@ on:
       - 'tools/phase7_schema_compat.py'
       - 'tests/test_phase5_disputes.py'
       - 'tests/conftest.py'
+      - 'tests/test_phase7_legacy_web_probe.py'
       - '.github/workflows/phase7-legacy-runner-tests.yml'
 permissions:
   contents: read
@@ -56,5 +57,6 @@ jobs:
         run: |
           export ACCOUNT_PRIVATE_KEY_1="$(python -c 'from eth_account import Account; print(Account.create().key.hex())')"
           export ACCOUNT_PRIVATE_KEY_2="$(python -c 'from eth_account import Account; print(Account.create().key.hex())')"
+          python -m pytest -q -s tests/test_phase7_legacy_web_probe.py
           python -m pytest -q --maxfail=1 tests/test_phase2_contract.py tests/test_phase4_payment.py tests/test_phase5_disputes.py tests/test_phase6_adversarial.py tests/test_phase7_intents.py
           python -m pytest -q tests/test_phase7_legacy_compat.py tests/test_phase7_schema_compat.py tests/test_phase7_deploy_preflight.py tests/test_phase7_legacy_sdk_path.py tests/test_phase7_rpc_diagnostics.py tests/test_phase7_evm_receipt.py tests/test_phase7_windows_relay.py
