@@ -32,7 +32,7 @@ def main():
     env_preflight["ACCOUNT_PRIVATE_KEY_1"]=buyer.key.hex()
     env_preflight["ACCOUNT_PRIVATE_KEY_2"]=seller.key.hex()
     cli=Path(sys.executable).parent/("gltest.exe" if os.name=="nt" else "gltest")
-    check_args=[str(cli),"tests/test_phase7_bradbury_readonly.py","-q",
+    check_args=[str(cli),"tests/test_phase7_bradbury_readonly.py","-q","-s",
                 "--network","testnet_bradbury","--rpc-url",URL]
     print("VERIFYING GENLAYER SDK OVER POWERSHELL BEFORE FUNDING...",flush=True)
     try:

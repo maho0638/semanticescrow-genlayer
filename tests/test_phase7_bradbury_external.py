@@ -11,6 +11,7 @@ sys.path.insert(0, str(_Path(__file__).resolve().parents[1] / "tools"))
 from phase7_evm_receipt import verify_confirmed_value_transfer
 from phase7_legacy_compat import require_legacy_bradbury
 from phase7_schema_compat import bind_verified_schema
+from phase7_deploy_preflight import preview_deploy,install_deploy_gas_headroom
 BUYER=Account.from_key(os.environ["ACCOUNT_PRIVATE_KEY_1"])
 SELLER=Account.from_key(os.environ["ACCOUNT_PRIVATE_KEY_2"])
 VALUE=10**14
@@ -74,9 +75,24 @@ def test_bradbury_real_ghost_refund():
     print("SE7_PUBLIC_STEP SCHEMA_LOOKUP_BEGIN",flush=True)
     schema = bind_verified_schema(fac)
     print("SE7_PUBLIC_STEP SCHEMA_LOOKUP_PASS", len(schema["methods"]),flush=True)
+    print("SE7_PUBLIC_STEP DEPLOY_SIMULATION_BEGIN",flush=True)
+    checked=preview_deploy(c,fac.contract_code)
+    print("SE7_PUBLIC_STEP DEPLOY_SIMULATION_PASS",checked["estimated_gas"],checked["padded_gas"],flush=True)
+    install_deploy_gas_headroom(c)
     print("SE7_PUBLIC_STEP DEPLOY_BEGIN",flush=True)
-    d=fac.deploy_contract_tx(account=buyer,fees=fees,wait_until="finalized",
-                             consensus_max_rotations=3,wait_retries=140,wait_interval=3000)
+    try:
+        d=fac.deploy_contract_tx(account=buyer,fees=fees,wait_until="finalized",
+                                 consensus_max_rotations=3,wait_retries=140,wait_interval=3000)
+    except Exception as exc:
+        print("SE7_PUBLIC_DEPLOY_EXCEPTION_CLASS",type(exc).__name__,flush=True)
+        cause=exc
+        for step in range(4):
+            cause=getattr(cause,"__cause__",None)
+            if cause is None:break
+            print("SE7_PUBLIC_DEPLOY_CAUSE",step,type(cause).__name__,flush=True)
+            # Never print raw exception messages: they could contain raw
+            # serialized tx, sensitive headers, or request metadata.
+        raise
     ok(d,"DEPLOY")
     ghost=extract_contract_address(d)
     code=query(p,"eth_getCode",[ghost,"latest"])

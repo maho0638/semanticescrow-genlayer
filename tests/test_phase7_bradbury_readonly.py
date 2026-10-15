@@ -37,4 +37,10 @@ def test_bradbury_sdk_can_access_rpc_and_configured_ephemeral_accounts():
     schema = bind_verified_schema(factory)
     assert len(schema["methods"]) == 17
     print("SE7_PUBLIC_CONTRACT_SCHEMA_CHECK_PASS",flush=True)
+    from phase7_deploy_preflight import preview_deploy
+    print("SE7_PUBLIC_DEPLOY_DRYRUN_BEGIN",flush=True)
+    dry=preview_deploy(client,factory.contract_code)
+    print("SE7_PUBLIC_DEPLOY_DRYRUN_PASS",
+          dry["estimated_gas"],dry["padded_gas"],flush=True)
+
 
