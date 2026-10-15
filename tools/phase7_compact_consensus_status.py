@@ -13,6 +13,49 @@ config=copy.deepcopy(testnet_bradbury)
 config.rpc_urls["default"]["http"]=[RPC]
 client=GenLayerClient(config,None)
 print("SE7_GENLAYER","CHAIN",config.id,"CONSENSUS_DATA",config.consensus_data_contract["address"],flush=True)
+
+# ABI-independent eth_call probes isolate getter reverts from Python decoding.
+import requests
+from web3 import Web3
+import time
+session=requests.Session()
+data_addr=config.consensus_data_contract["address"]
+current_ts=int(time.time())
+def raw_rpc(method,params):
+    try:
+        res=session.post(RPC,json={"jsonrpc":"2.0","id":37,
+                          "method":method,"params":params},timeout=25)
+        if res.status_code!=200:return None,"HTTP_"+str(res.status_code)
+        body=res.json()
+        if "error" in body:
+            err=body["error"]
+            return None,"RPC_"+str(err.get("code","?"))
+        return body.get("result"),None
+    except (requests.RequestException,ValueError,TypeError) as ex:
+        return None,type(ex).__name__
+
+chain,err=raw_rpc("eth_chainId",[])
+assert chain=="0x107d", "wrong chain"
+block,e=raw_rpc("eth_getBlockByNumber",["latest",False])
+ts_block=int(block["timestamp"],16) if isinstance(block,dict) else current_ts
+for label,signature,argument_hex in [
+    ("STATUS_CURRENT","getTransactionStatus(bytes32,uint256)",TX_ID[2:]+format(current_ts,"064x")),
+    ("STATUS_BLOCK","getTransactionStatus(bytes32,uint256)",TX_ID[2:]+format(ts_block,"064x")),
+    ("STATUS_ZERO","getTransactionStatus(bytes32,uint256)",TX_ID[2:]+format(0,"064x")),
+    ("GET_DATA_CURRENT","getTransactionData(bytes32,uint256)",TX_ID[2:]+format(current_ts,"064x")),
+    ("GET_DATA_ZERO","getTransactionData(bytes32,uint256)",TX_ID[2:]+format(0,"064x")),
+    ("GET_ALL_DATA","getTransactionAllData(bytes32)",TX_ID[2:]),
+    ("GET_VALIDATORS_LAST","getValidatorsForLastRound(bytes32)",TX_ID[2:]),
+    ("CAN_FINALIZE","canFinalize(bytes32,uint256)",TX_ID[2:]+format(current_ts,"064x")),
+]:
+    selector=Web3.keccak(text=signature)[:4].hex()
+    call={"to":data_addr,"data":"0x"+selector+argument_hex,"gas":hex(10_000_000)}
+    output,error=raw_rpc("eth_call",[call,"latest"])
+    size=(len(output)-2)//2 if isinstance(output,str) and output.startswith("0x") else 0
+    u8=(int(output,16) if isinstance(output,str) and size==32 else None)
+    print("SE7_GENLAYER","DIRECT",label,"ERROR",error,"RETURN_BYTES",size,
+          "WORD",u8 if label.startswith("STATUS_") else "HIDDEN",flush=True)
+
 try:
     obj=client.get_transaction(TX_ID)
     if not isinstance(obj,dict):
