@@ -128,3 +128,18 @@ SDK source: https://github.com/genlayerlabs/genlayer-py/blob/main/genlayer_py/co
 **Important remaining verification:** Only a Windows PC whose PowerShell can access Bradbury can finish the real contract deployment, creation, dual-signed cancellation and independent Ghost recipient EVM credit test. GitHub Cloud runners were blocked by Cloudflare. Do not claim Phase 7 completely closed from offline evidence. The release's failed-message recovery and DNS/source security gates are also not established by this compatibility patch.
 
 The runner must first be executed with `--diagnose-only`. Only after it prints `SE7_PUBLIC_LEGACY_PROTOCOL_GATE_PASS` and `SE7_PUBLIC_CONTRACT_SCHEMA_CHECK_PASS` should it display a new temporary funding address in normal mode. Never send tokens to the previous expired address. The ephemeral wallet key is not saved, in accordance with the user's stated preference.
+
+## 2026-10-15 — Studio-dev contract schema bridge after legacy Bradbury fee/ABI correction
+
+User's Windows screenshot shows `SE7_PUBLIC_LEGACY_PROTOCOL_GATE_PASS`, immediately followed by `SDK READ-ONLY PREFLIGHT FAILED: AssertionError`. This is after the validated old Bradbury ABI/fee gate. Source inspection of GenLayer-PY `get_contract_schema_for_code` shows it deliberately rejects non-localnet networks; gltest's `ContractFactory._get_schema_with_fallback` silently returns `None` if all fallbacks fail. This is a **schema compilation API limitation**, not a failed GenVM contract deployment.
+
+Read-only hosted API proof:
+- <https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38775305078>: `gen_getContractSchemaForCode` on `studio.genlayer.com/api` failed `-32603`; `studio-dev.genlayer.com/api` succeeded, returning `ctor` and **17 methods**.
+- <https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38775566652>: complete 17 method names matched the SemanticEscrow source byte hash `4fae50929d9e98e1d166661acaac120d5153e5dd8ca1b203a444475330223b66`.
+- Isolated Windows test branch adds `tools/phase7_schema_compat.py`, which requests the same public source from **the official Studio-dev JSON-RPC only**, verifies the exact source hash and 17 required method names, and binds the returned schema on **one ContractFactory instance**. If blocked in Windows Python, only the official Studio-dev RPC via native PowerShell is allowed; no arbitrary proxies or private wallet credentials. No global SDK modification.
+- <https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38776193493>: **SUCCESS**: 153 historical Direct Mode + 19 EVM receipts + 13 old ABI + 1 SDK encoding + 2 PowerShell localhost + 10 static/schema fail-closed + 1 real Studio-dev source compilation test = **199 passed**, GenVM lint 3/3. Tested code commit `8045b0d47c4195bf027dc3133215b0e8da2a9dd4`.
+
+No actual Bradbury contract deployment, seller approval, or real Ghost refund was proven after this patch. Before any new test-GEN transfer, execute Windows `--diagnose-only` and **require** both `SE7_PUBLIC_LEGACY_PROTOCOL_GATE_PASS` and `SE7_PUBLIC_CONTRACT_SCHEMA_CHECK_PASS`, followed by `DIAGNOSTIC COMPLETE`. Never fund expired earlier accounts.
+
+**Stage 7 is NOT fully complete**: live transaction receipt/balance proof and reliable child-transfer failure handling remain separate production release gates.
+
