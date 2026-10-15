@@ -177,3 +177,66 @@ def test_untrusted_evidence_cannot_redirect_beneficiary(direct_vm,direct_deploy)
  assert deal["seller"]==SELLER and deal["buyer"]==BUYER
  assert int(c.get_total_locked())==50
  assert json.loads(c.get_ledger(idx))["payout_queued_total"]=="0"
+
+import hashlib
+
+
+@pytest.mark.parametrize("body_size,expected",[
+ (0,"INVALID_SIZE"), (1,"MISMATCH"), (6000,"VERIFIED"), (6001,"INVALID_SIZE"),
+])
+def test_response_body_size_boundaries_and_no_unearned_approval(direct_vm,direct_deploy,body_size,expected):
+ c=deploy(direct_vm,direct_deploy)
+ idx=open_deal(direct_vm,c)
+ direct_vm.sender=SELLER
+ direct_vm.value=0
+ data=b"A"*body_size
+ url="https://large-safe.example/pinned"
+ c.submit_evidence(idx,manifest((url,data),(B,BODY_B)))
+ direct_vm.mock_web(r"large-safe\.example",{"status":200,"body":data.decode()})
+ direct_vm.mock_web(r"proof-b\.example",{"status":200,"body":BODY_B.decode()})
+ direct_vm.mock_llm(r"evidence auditor",'{"labels":["PASS","PASS"]}')
+ result=c.assess(idx)
+ snapshot=json.loads(c.get_assessment(idx,0,0))
+ assert snapshot["source_results"][0]["integrity"]==expected
+ assert snapshot["source_results"][1]["integrity"]=="VERIFIED"
+ if expected=="VERIFIED":
+  assert result=="APPROVED"
+  assert json.loads(c.get_milestone(idx,0))["state"]=="APPROVE_PENDING"
+ else:
+  assert result=="INCONCLUSIVE"
+  assert json.loads(c.get_milestone(idx,0))["state"]=="SUBMITTED"
+ assert int(c.get_total_locked())==50
+
+
+def test_modified_committed_bytes_never_count_as_verified(direct_vm,direct_deploy):
+ c,idx=submitted(direct_vm,direct_deploy)
+ direct_vm.mock_web(r"proof-a\.example",{"status":200,"body":"same URL but malicious replacement"})
+ direct_vm.mock_web(r"proof-b\.example",{"status":200,"body":BODY_B.decode()})
+ direct_vm.mock_llm(r"evidence auditor",'{"labels":["PASS","PASS"]}')
+ assert c.assess(idx)=="INCONCLUSIVE"
+ snapshot=json.loads(c.get_assessment(idx,0,0))
+ assert snapshot["source_results"][0]["integrity"]=="MISMATCH"
+ assert snapshot["source_results"][0]["observed_sha256"]!=""+hashlib.sha256(BODY_A).hexdigest()
+ assert int(c.get_total_locked())==50
+
+
+def test_authority_casing_normalization_prevents_duplicate_host_quorum(direct_vm,direct_deploy):
+ c=deploy(direct_vm,direct_deploy)
+ idx=open_deal(direct_vm,c)
+ direct_vm.value=0
+ direct_vm.sender=SELLER
+ with direct_vm.expect_revert("duplicate hostname"):
+  c.submit_evidence(idx,manifest(("https://PROOF-A.EXAMPLE/a",BODY_A),
+                                 ("https://proof-a.example/b",BODY_B)))
+ assert json.loads(c.get_milestone(idx,0))["state"]=="AWAITING_DELIVERY"
+
+
+def test_identical_sha_on_different_hosts_does_not_satisfy_source_independence(direct_vm,direct_deploy):
+ c=deploy(direct_vm,direct_deploy)
+ idx=open_deal(direct_vm,c)
+ direct_vm.value=0
+ direct_vm.sender=SELLER
+ with direct_vm.expect_revert("duplicate evidence hash"):
+  c.submit_evidence(idx,manifest(("https://host-a.example/one",BODY_A),
+                                 ("https://host-b.example/two",BODY_A)))
+ assert int(c.get_total_locked())==50
