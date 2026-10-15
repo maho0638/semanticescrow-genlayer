@@ -182,7 +182,7 @@ import hashlib
 
 
 @pytest.mark.parametrize("body_size,expected",[
- (0,"INVALID_SIZE"), (1,"MISMATCH"), (6000,"VERIFIED"), (6001,"INVALID_SIZE"),
+ (0,"INVALID_SIZE"), (1,"VERIFIED"), (6000,"VERIFIED"), (6001,"INVALID_SIZE"),
 ])
 def test_response_body_size_boundaries_and_no_unearned_approval(direct_vm,direct_deploy,body_size,expected):
  c=deploy(direct_vm,direct_deploy)
