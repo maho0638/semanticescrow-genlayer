@@ -285,3 +285,16 @@ def test_only_create_deal_accepts_native_gen_without_public_receive_handler():
                     and dec.value.attr=="write"):
                 payable.append(name)
     assert payable==["create_deal"]
+
+
+def test_exact_pinned_genvm_abi_schema_includes_financial_methods(direct_vm,direct_deploy):
+    # The linter alone missed an unsupported public special method. Verify
+    # the *actual vendored* ABI/schema generator too, preventing regression.
+    contract=deploy(direct_vm,direct_deploy)
+    from genlayer._internal.get_schema import get_schema
+    schema=get_schema(type(contract))
+    methods=schema["methods"]
+    assert methods["create_deal"]["payable"] is True
+    assert methods["settle"]["payable"] is False
+    assert methods["get_total_locked"]["readonly"] is True
+    assert "__receive__" not in methods
