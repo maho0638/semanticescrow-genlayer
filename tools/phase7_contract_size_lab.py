@@ -97,7 +97,7 @@ for tag,diff in [
 ]:
     try:
         # Remove initial dependency comments and prepend them verbatim.
-        out=python_minifier.minify("\n".join(LINES[2:]),**opts,**diff)
+        out=python_minifier.minify("\n".join(LINES[2:]),**{**opts,**diff})
         variants.append(source_variant(tag,out))
     except Exception as exc:
         print("SE7_SIZE",tag,"COMPILER_FAILURE_CLASS",type(exc).__name__,flush=True)
