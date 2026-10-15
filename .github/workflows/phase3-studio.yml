@@ -55,6 +55,7 @@ jobs:
         shell: bash
         run: |
           set -uo pipefail
+          set +e # GitHub bash starts with -e; preserve test exit status for sanitized diagnosis
           gltest tests/test_studio_phase3.py -v -s --network localnet > /tmp/se-studio-private.log 2>&1
           code=$?
           python - <<'PY'
