@@ -55,3 +55,25 @@ The GenLayer-specific JSON-RPC is needed for deploying/calling the Intelligent C
 **Phase 7 remains locally verified only**, with 153 Direct Mode PASS + local Studio five-validator PASS; Bradbury end-to-end EVM credit and child-message failure recovery remain **NOT VERIFIED**. Do not mark fully completed or ready for live escrow money.
 
 **Wallet safety:** The wallet-generation path was not reached on the failing run, so no fundable public address with a currently retained key exists. Never ask the user to send test GEN to previously expired ephemeral wallet addresses. A fresh wallet address may be shared ONLY after a confirmed-access session has successfully started and its key remains available to the signing process. No main branch, Portal, PR, merge, or production deployment was affected.
+
+## 15 Oct 2026 — Cloudflare cf-mitigated=challenge diagnosis (read-only)
+
+A precise HTTP-header probe at https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38746191325 confirmed the root transport obstruction for the current GitHub-hosted RPC test:
+
+| POST eth_chainId endpoint | HTTP | Server | cf-mitigated | Body |
+| --- | --- | --- | --- | --- |
+| rpc-bradbury.genlayer.com | 403 on both tries | cloudflare | challenge | text/html |
+| rpc-asimov.genlayer.com | 403 on both tries | cloudflare | challenge | text/html |
+| rpc.testnet-chain.genlayer.com | 200 on both tries | ordinary JSON RPC | none | application/json, chain 4221 |
+| studio.genlayer.com/api | 200 on both tries | cloudflare | none | application/json, chain 61999 |
+
+Cloudflare's own documentation confirms that `cf-mitigated: challenge` indicates a challenge page being served, not an actual JSON-RPC response. JSON-RPC clients cannot complete a browser challenge, so the request does not reach the GenLayer RPC method handler. This is conclusively an edge-gateway challenge for the tested CI requests, **not a contract compile/test-gas/GEN balance error**. It also distinguishes the earlier separate Bradbury reported internal upstream proxy failure (https://github.com/genlayerlabs/genlayer-cli/issues/425) and MetaMask `net_version` omission (https://github.com/genlayerlabs/genlayer-docs/issues/486) from our specific 403.
+
+The specific Cloudflare WAF, Bot Management, rate-limiting, IP/geo or other matched rule is **not known** without the GenLayer site's Security Events/Cloudflare configuration. Owner-side remediation should exempt legitimate JSON-RPC API traffic from interstitial challenge actions, while retaining appropriate API authentication, rate limiting and abuse controls. An approved IP allowlist or officially authenticated machine-to-machine path are other owner-controlled options. Users cannot solve this reliably by adding GEN, changing wallets, or modifying escrow source.
+
+Cloudflare sources:
+- https://developers.cloudflare.com/cloudflare-challenges/challenge-types/challenge-pages/detect-response/
+- https://developers.cloudflare.com/cloudflare-challenges/challenge-types/challenge-pages/
+- https://developers.cloudflare.com/waf/custom-rules/skip/
+
+**Operational consequence:** Bradbury end-to-end escrow transfer and EVM/Ghost recipient credit remain unverified until the operator corrects challenge handling or supplies an official supported accessible GenLayer RPC. Never route keys through random proxies, or send test GEN to expired ephemeral wallet addresses.
