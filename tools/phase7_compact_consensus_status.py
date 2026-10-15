@@ -66,6 +66,27 @@ for label,signature,argument_hex in [
                    and output_default.startswith("0x") else 0,flush=True)
 
 # Instrument only read-only chain queries. Never send signed transactions.
+# Read-only compatibility path for the still-deployed Bradbury ConsensusData
+# v0.6, which the v0.19rc2 SDK's Train lookup currently fails to query.
+from genlayer_py.consensus.abi import CONSENSUS_DATA_ABI_V06
+try:
+    storage=client.w3.eth.contract(address=data_addr,abi=CONSENSUS_DATA_ABI_V06)
+    raw=storage.functions.getTransactionData(TX_ID,current_ts).call()
+    all_data=storage.functions.getTransactionAllData(TX_ID).call()
+    can=storage.functions.canFinalize(TX_ID,current_ts).call()
+    print("SE7_GENLAYER","LEGACY_READ_OK",True,
+          "DATA_FIELDS",len(raw),"ALL_DATA_FIELDS",len(all_data),
+          "RECIPIENT",str(raw[2]) if len(raw)>2 else "N/A",
+          "CONSENSUS_STATUS",raw[18] if len(raw)>18 else "N/A",
+          "RESULT",raw[8] if len(raw)>8 else "N/A",
+          "EXECUTION_RESULT",all_data[0][1] if isinstance(all_data[0],(list,tuple)) else "N/A",
+          "CAN_FINALIZE",str(can)[:200],flush=True)
+    if len(raw)>2 and isinstance(raw[2],str):
+        ghost_code=client.w3.eth.get_code(raw[2])
+        print("SE7_GENLAYER","GHOST_CODE_BYTES",len(ghost_code),flush=True)
+except Exception as exc:
+    print("SE7_GENLAYER","LEGACY_READ_FAILED_CLASS",type(exc).__name__,flush=True)
+
 original_request = client.provider.make_request
 def observe(method, params):
     if method == "eth_call" and isinstance(params,(list,tuple)) and params:
