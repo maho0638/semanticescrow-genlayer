@@ -28,6 +28,31 @@ def main():
     assert isinstance(result,str) and int(result,16)==4221,"Wrong network"
     print("BRADBURY POWERSHELL RPC OK: 4221",flush=True)
     buyer,seller=Account.create(),Account.create()
+    env_preflight=os.environ.copy()
+    env_preflight["ACCOUNT_PRIVATE_KEY_1"]=buyer.key.hex()
+    env_preflight["ACCOUNT_PRIVATE_KEY_2"]=seller.key.hex()
+    cli=Path(sys.executable).parent/("gltest.exe" if os.name=="nt" else "gltest")
+    check_args=[str(cli),"tests/test_phase7_bradbury_readonly.py","-q",
+                "--network","testnet_bradbury","--rpc-url",URL]
+    print("VERIFYING GENLAYER SDK OVER POWERSHELL BEFORE FUNDING...",flush=True)
+    try:
+        check=subprocess.run(check_args,env=env_preflight,capture_output=True,
+                             text=True,errors="replace",timeout=240)
+    except subprocess.TimeoutExpired:
+        print("SDK READ-ONLY PREFLIGHT TIMED OUT. NO TEST GEN REQUESTED.",flush=True)
+        return 4
+    finally:
+        env_preflight.pop("ACCOUNT_PRIVATE_KEY_1",None)
+        env_preflight.pop("ACCOUNT_PRIVATE_KEY_2",None)
+    if check.returncode!=0:
+        failures=sorted(set(re.findall(
+            r"\\b(?:AssertionError|RuntimeError|TimeoutError|ImportError|"
+            r"AttributeError|ValueError|KeyError|ConnectionError)\\b",
+            (check.stdout or "")+"\\n"+(check.stderr or ""))))
+        print("SDK READ-ONLY PREFLIGHT FAILED:",",".join(failures) or "unclassified",flush=True)
+        print("DO NOT SEND GEN. RECHECK SDK/RPC CONFIGURATION.",flush=True)
+        return 4
+    print("GENLAYER SDK READ-ONLY PREFLIGHT OK - SAFE TO REQUEST TEST FUNDING",flush=True)
     expires=datetime.datetime.now(datetime.timezone.utc)+datetime.timedelta(seconds=END_AFTER)
     print("SEND ONLY BRADBURY TEST GEN TO THIS NEW ADDRESS:",flush=True)
     print(buyer.address,flush=True)
