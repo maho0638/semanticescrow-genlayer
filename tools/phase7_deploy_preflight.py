@@ -21,7 +21,10 @@ from phase7_schema_compat import SOURCE_SHA256
 # Never fund it again. Read-only EVM sender simulation does NOT need its key.
 PUBLIC_READONLY_SENDER = "0x84D37542B362F96282b19D479cF9b06E15ff62eA"
 PRIORITY_FEE_WEI = 2_000_000_000
-EXTRA_GAS = 3_000_000
+# GenLayer CLI #419 documents 16M gas being rejected at Bradbury.
+# This is a conservative release gate, not a proven per-transaction maximum.
+MAX_SAFE_LEGACY_GAS = 15_000_000
+MIN_HEADROOM = 1_000_000
 
 
 class DeployPreviewError(RuntimeError):
@@ -46,7 +49,13 @@ def padded_gas(estimated, limit):
     limit=int(limit)
     if estimated<=0 or limit<=0:
         raise DeployPreviewError("invalid estimate or block gas limit")
-    padded=estimated+max(EXTRA_GAS,(estimated+4)//5)
+    # 10% or at least 1M gas headroom while respecting empirical
+    # sub-16M Bradbury acceptance ceiling (GenLayer CLI issue #419).
+    if estimated>=MAX_SAFE_LEGACY_GAS:
+        raise DeployPreviewError("deploy estimate exceeds Bradbury safe gas ceiling")
+    padded=estimated+max(MIN_HEADROOM,(estimated+9)//10)
+    if padded>MAX_SAFE_LEGACY_GAS:
+        raise DeployPreviewError("insufficient safe headroom under Bradbury gas ceiling")
     if padded>limit:
         raise DeployPreviewError("padded gas exceeds block limit")
     return padded
