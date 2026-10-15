@@ -20,12 +20,13 @@ def verify_confirmed_value_transfer(receipt, txid, expected_recipient):
         raise AssertionError("missing EVM receipt")
     if parse_evm_status(receipt.get("status")) != 1:
         raise AssertionError("EVM transaction execution failed")
-    if receipt.get("transactionHash") is not None:
-        if str(receipt["transactionHash"]).lower() != str(txid).lower():
-            raise AssertionError("transaction hash mismatch")
-    if receipt.get("to") is not None:
-        if str(receipt["to"]).lower() != str(expected_recipient).lower():
-            raise AssertionError("transaction recipient mismatch")
+    # A receipt missing hash/recipient cannot attest delivery; fail closed.
+    if receipt.get("transactionHash") is None or receipt.get("to") is None:
+        raise AssertionError("receipt missing transaction identity or recipient")
+    if str(receipt["transactionHash"]).lower() != str(txid).lower():
+        raise AssertionError("transaction hash mismatch")
+    if str(receipt["to"]).lower() != str(expected_recipient).lower():
+        raise AssertionError("transaction recipient mismatch")
     if receipt.get("blockNumber") in (None, "0x0", 0):
         raise AssertionError("EVM transaction is not confirmed in a non-genesis block")
     return True
