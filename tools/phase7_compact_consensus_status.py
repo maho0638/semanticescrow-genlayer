@@ -68,16 +68,20 @@ for label,signature,argument_hex in [
 # Instrument only read-only chain queries. Never send signed transactions.
 # Read-only compatibility path for the still-deployed Bradbury ConsensusData
 # v0.6, which the v0.19rc2 SDK's Train lookup currently fails to query.
-from genlayer_py.consensus.abi import CONSENSUS_DATA_ABI_V06
+# Use the exact legacy v0.6 read-only ABI rather than the installed 0.19
+# SDK's incompatible Train ABI. Source: official genlayer-py repository.
+from pathlib import Path
+import json
+LEGACY_DATA_ABI=json.loads(Path(__file__).with_name("phase7_legacy_consensus_data_abi.json").read_text(encoding="utf-8"))
 try:
-    storage=client.w3.eth.contract(address=data_addr,abi=CONSENSUS_DATA_ABI_V06)
+    storage=client.w3.eth.contract(address=data_addr,abi=LEGACY_DATA_ABI)
     raw=storage.functions.getTransactionData(TX_ID,current_ts).call()
     all_data=storage.functions.getTransactionAllData(TX_ID).call()
     can=storage.functions.canFinalize(TX_ID,current_ts).call()
     print("SE7_GENLAYER","LEGACY_READ_OK",True,
           "DATA_FIELDS",len(raw),"ALL_DATA_FIELDS",len(all_data),
           "RECIPIENT",str(raw[2]) if len(raw)>2 else "N/A",
-          "CONSENSUS_STATUS",raw[18] if len(raw)>18 else "N/A",
+          "CONSENSUS_STATUS",raw[17] if len(raw)>17 else "N/A",
           "RESULT",raw[8] if len(raw)>8 else "N/A",
           "EXECUTION_RESULT",all_data[0][1] if isinstance(all_data[0],(list,tuple)) else "N/A",
           "CAN_FINALIZE",str(can)[:200],flush=True)
