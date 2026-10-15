@@ -362,3 +362,29 @@ def test_unavailable_supplement_cannot_change_verdict_using_original_sources(dir
     assert stage(c)["final_verdict"]==""
     assert account(c,x)["payout_queued_total"]==0
     assert account(c,x)["refund_queued_total"]==0
+
+
+def test_seven_source_max_challenge_reversal_end_to_end(direct_vm,direct_deploy):
+    c=deploy(direct_vm,direct_deploy)
+    x=open_deal(direct_vm,c)
+    initial=[(A,BODY_A),(B,BODY_B),C,D,E]
+    direct_vm.sender=SELLER
+    direct_vm.value=0
+    c.submit_evidence(x,manifest(*initial))
+    add_source_mocks(direct_vm,initial)
+    direct_vm.mock_llm(r"evidence auditor",'{"labels":["PASS","PASS"]}')
+    assert c.assess(x)=="APPROVED"
+    case_challenge(direct_vm,c,x,supplemental((F,G)))
+    direct_vm.clear_mocks()
+    add_source_mocks(direct_vm,initial+[F,G])
+    direct_vm.mock_llm(r"evidence auditor",'{"labels":["FAIL","PASS"]}')
+    assert c.assess_challenge(x)=="REJECTED"
+    last=json.loads(c.get_assessment(x,0,1))
+    assert len(last["source_results"])==7
+    assert sum(row["integrity"]=="VERIFIED" for row in last["source_results"])==7
+    assert stage(c)["first_verdict"]=="APPROVED"
+    assert stage(c)["final_verdict"]=="REJECTED"
+    direct_vm.sender=ATTACKER
+    c.settle(x)
+    assert check_cash(c,x)["refund_queued_total"]==50
+    assert check_cash(c,x)["payout_queued_total"]==0
