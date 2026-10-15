@@ -44,6 +44,11 @@ def main():
     finally:
         env_preflight.pop("ACCOUNT_PRIVATE_KEY_1",None)
         env_preflight.pop("ACCOUNT_PRIVATE_KEY_2",None)
+    # Print only explicitly authored public checkpoints, never raw gltest logs.
+    for line in (check.stdout or "").splitlines():
+        i=line.find("SE7_PUBLIC_")
+        if i>=0:
+            print(line[i:i+280],flush=True)
     if check.returncode!=0:
         failures=sorted(set(re.findall(
             r"\b(?:AssertionError|RuntimeError|TimeoutError|ImportError|"
@@ -91,8 +96,18 @@ def main():
         env.pop("ACCOUNT_PRIVATE_KEY_1",None)
         env.pop("ACCOUNT_PRIVATE_KEY_2",None)
     for line in (proc.stdout or "").splitlines():
-        if line.startswith("SE7_PUBLIC_"):
-            print(line[:260],flush=True)
+        # Verbose pytest prefixes the first checkpoint with a node id.
+        i=line.find("SE7_PUBLIC_")
+        if i>=0:
+            print(line[i:i+260],flush=True)
+    if proc.returncode:
+        # Only known project source frames, never raw receipts, headers,
+        # env/private keys, URLs or raw exception text.
+        for filename,line_number in re.findall(
+            r"(test_phase7_bradbury_external\\.py):(\\d+):", (proc.stdout or "")+"\\n"+(proc.stderr or "")
+        )[:4]:
+            print("SE7_PUBLIC_FAILURE_SOURCE",filename,line_number,flush=True)
+
     if proc.returncode==0:
         print("CONTRACT TEST PASSED. Validate transaction hashes on Bradbury explorer.",flush=True)
         return 0
