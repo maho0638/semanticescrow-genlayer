@@ -8,6 +8,7 @@ on:
       - 'tools/phase7_windows_rpc_bridge.py'
       - 'tests/test_phase7_windows_relay.py'
       - 'tests/test_phase7_bradbury_external.py'
+      - 'tests/test_phase7_bradbury_readonly.py'
       - 'gltest.config.yaml'
       - '.github/workflows/phase7-windows-preflight.yml'
 permissions:
