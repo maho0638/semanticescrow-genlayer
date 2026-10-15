@@ -161,7 +161,13 @@ def _load_module_reset_contract_registration(contract_path):
     except ModuleNotFoundError:
         genvm_contracts = importlib.import_module("genlayer.gl.genvm_contracts")
     genvm_contracts.__known_contract__ = None
-    return _original_load_module(contract_path)
+    loaded = _original_load_module(contract_path)
+    if os.environ.get("SEMANTICESCROW_SDK_0_2_EMULATION") == "1":
+        # gltest 0.30 VMContext.run_validator imports genlayer.vm directly,
+        # while actual v0.2.16 exports the equivalent at genlayer.gl.vm.
+        import sys
+        sys.modules["genlayer.vm"] = importlib.import_module("genlayer.gl.vm")
+    return loaded
 
 
 loader._load_module = _load_module_reset_contract_registration
