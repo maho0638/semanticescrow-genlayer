@@ -39,6 +39,38 @@ def _record(receipt,label):
     from gltest.assertions import tx_execution_succeeded
     success=tx_execution_succeeded(receipt)
     print("SE_STAGE3_TX:",label,"success=",success,flush=True)
+    if not success:
+        # Print only exception classes and execution enums: never raw receipts,
+        # prompts, URLs, wallet secrets, validator configuration or tokens.
+        from collections import Counter
+        import re
+        consensus=receipt.get("consensus_data") or {}
+        records=consensus.get("leader_receipt") or []
+        records=[records] if isinstance(records,dict) else records
+        print("SE_STAGE3_EXECUTION_ENUM:",str(receipt.get("tx_execution_result_name",receipt.get("tx_execution_result","UNKNOWN")))[:65],flush=True)
+        kinds=Counter()
+        frames=Counter()
+        for lead in records if isinstance(records,list) else []:
+            if not isinstance(lead,dict):
+                continue
+            gv=lead.get("genvm_result") or {}
+            if not isinstance(gv,dict):
+                continue
+            blob=str(gv.get("stderr",""))[:200000]
+            for line in blob.splitlines():
+                match=re.search(r"(?:^|\\.)\\b([A-Za-z][A-Za-z0-9_]*(?:Error|Exception)):",line)
+                if match:
+                    kinds[match.group(1)]+=1
+            for fname,method in re.findall(r'File "[^"]*/([A-Za-z0-9_.-]{1,60})", line [0-9]+, in ([A-Za-z_][A-Za-z0-9_]*)',blob):
+                if fname in ("semantic_escrow.py","vm.py","web.py","_internal.py"):
+                    frames[fname+":"+method]+=1
+            result=gv.get("result") or {}
+            if isinstance(result,dict):
+                kind=str(result.get("kind","UNKNOWN")).upper()
+                if kind in ("USER_ERROR","VM_ERROR","RETURN","PANIC","INTERNAL_ERROR"):
+                    kinds["GENVM_"+kind]+=1
+        print("SE_STAGE3_ERROR_CLASSES:",dict(kinds),flush=True)
+        print("SE_STAGE3_ERROR_FRAMES:",dict(frames),flush=True)
     assert success, label+" did not execute successfully"
 
 
