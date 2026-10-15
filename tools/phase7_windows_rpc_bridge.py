@@ -18,7 +18,7 @@ MAX_BODY = 3 * 1024 * 1024
 POWER_SHELL_CODE = (
     "$ErrorActionPreference='Stop';"
     "$ProgressPreference='SilentlyContinue';"
-    "[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false);"
+    "[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false);"
     "$raw=[Console]::In.ReadToEnd();"
     "$answer=Invoke-RestMethod -Uri '" + UPSTREAM + "'"
     " -Method Post -ContentType 'application/json'"
