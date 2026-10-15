@@ -56,9 +56,9 @@ def _quorum(receipt,label,addresses=None):
     return c
 
 
-def _send(method,args,fees,account=None,value=0,context=None,label="write"):
+def _send(method,args,fees,value=0,context=None,label="write"):
     result=method(args=args).transact(
-        account=account, value=value, fees=fees,
+        value=value, fees=fees,
         transaction_context=context, consensus_max_rotations=3,
         wait_until="finalized", wait_retries=95, wait_interval=3000,
     )
@@ -104,7 +104,7 @@ def test_studio_five_validator_deposit_submit_and_consensus():
             {"id":"next","text":"Follow-on release independently verified","mandatory":True}]}
     ]
     receipt=_send(contract.create_deal,[seller_addr,json.dumps(milestones),"stage3-local-only"],
-                  fees,buyer,value=25,context=context,label="CREATE_EXACT_FUNDED")
+                  fees,value=25,context=context,label="CREATE_EXACT_FUNDED")
     _quorum(receipt,"CREATE")
     assert int(contract.deal_count().call())==1
     ledger=json.loads(contract.get_ledger(args=[0]).call())
@@ -134,13 +134,13 @@ def test_studio_five_validator_deposit_submit_and_consensus():
       {"url":URL_A,"sha256":hashlib.sha256(BODY_A.encode("utf-8")).hexdigest()},
       {"url":URL_B,"sha256":hashlib.sha256(BODY_B.encode("utf-8")).hexdigest()},
     ],separators=(",",":"))
-    submitted=_send(contract.submit_evidence,[0,evidence],
-                    fees,seller,context=context,label="SELLER_SUBMIT_EVIDENCE")
+    submitted=_send(contract.connect(seller).submit_evidence,[0,evidence],
+                    fees,context=context,label="SELLER_SUBMIT_EVIDENCE")
     _quorum(submitted,"SUBMIT",addrs)
     assert json.loads(contract.get_milestone(args=[0,0]).call())["state"]=="SUBMITTED"
     print("SE_STAGE3: SELLER_SUBMISSION_FINALIZED",flush=True)
 
-    evaluated=_send(contract.assess,[0],fees,buyer,context=context,
+    evaluated=_send(contract.connect(buyer).assess,[0],fees,context=context,
                     label="INDEPENDENT_CONSENSUS_ASSESSMENT")
     _quorum(evaluated,"ASSESS",addrs)
     milestone=json.loads(contract.get_milestone(args=[0,0]).call())
