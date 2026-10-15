@@ -41,3 +41,17 @@ Docs: https://docs.genlayer.com/developers/intelligent-contracts/features/value-
 ## Stop point
 
 Code and tests can be concluded for **this limited, local Phase-7 evidence interface** only. The withheld real-funds authorization, original missing Stage 7 specification and external delivery-safety gates remain open. Never claim a live payment has reached the recipient merely from the presence of a row.
+
+## 15 Oct 2026 — Actual Bradbury public RPC execution attempt (after user test-GEN approval)
+
+The user explicitly approved spending **free test GEN** from an independently generated ephemeral wallet, without disclosing or committing mnemonic/private key material. The intended integration test was to deploy SemanticEscrow on Bradbury, fund a deal, mutually cancel with a separate signer, and independently confirm beneficiary EVM balance credit. The entire test harness was isolated on `test/phase7-bradbury-ephemeral-20261015`, not `main`.
+
+- <https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38740606209> — **FAIL (transport blocker, not contract execution failure)**: Bradbury RPC returned HTTP 403 during the preflight `eth_chainId`, before the ephemeral wallet was created. No test GEN was funded, spent, or stranded.
+- <https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38740830771> — **SUCCESS as diagnostic** from Ubuntu: 2/2 `rpc-bradbury.genlayer.com` requests HTTP 403; 2/2 `rpc-asimov.genlayer.com` requests HTTP 403; the separate official `rpc.testnet-chain.genlayer.com` returned HTTP 200 with chain ID 4221 on both attempts.
+- <https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38741064285> — **SUCCESS as diagnostic** from macOS with identical results: GenLayer-specific RPCs HTTP 403; underlying L2 chain RPC HTTP 200, chain ID 4221.
+
+The GenLayer-specific JSON-RPC is needed for deploying/calling the Intelligent Contract and reading `gen_*` consensus status. Standard `eth_*` L2 access is insufficient to certify a GenVM/Ghost payout or child transfer recovery. HTTP 403 must not be circumvented by routing secret signing keys through unverified proxies.
+
+**Phase 7 remains locally verified only**, with 153 Direct Mode PASS + local Studio five-validator PASS; Bradbury end-to-end EVM credit and child-message failure recovery remain **NOT VERIFIED**. Do not mark fully completed or ready for live escrow money.
+
+**Wallet safety:** The wallet-generation path was not reached on the failing run, so no fundable public address with a currently retained key exists. Never ask the user to send test GEN to previously expired ephemeral wallet addresses. A fresh wallet address may be shared ONLY after a confirmed-access session has successfully started and its key remains available to the signing process. No main branch, Portal, PR, merge, or production deployment was affected.
