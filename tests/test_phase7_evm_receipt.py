@@ -27,6 +27,14 @@ def test_receipt_hash_and_to_are_consistent():
     with pytest.raises(AssertionError):
         verify_confirmed_value_transfer(receipt,"0xaa","0xcc")
 
+@pytest.mark.parametrize("missing",["transactionHash","to"])
+def test_receipt_missing_identity_or_recipient_is_rejected(missing):
+    receipt={"status":"0x1","blockNumber":"0x12",
+             "transactionHash":"0xaa","to":"0xbb"}
+    receipt.pop(missing)
+    with pytest.raises(AssertionError):
+        verify_confirmed_value_transfer(receipt,"0xaa","0xbb")
+
 @pytest.mark.parametrize("block",["0x0",0,None])
 def test_unmined_receipt_cannot_pass(block):
     with pytest.raises(AssertionError):
