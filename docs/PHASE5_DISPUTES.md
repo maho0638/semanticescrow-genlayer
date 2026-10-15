@@ -1,11 +1,11 @@
 # SemanticEscrow — PHASE 5 dispute and appeal security
 
-**Status (2026-10-15): 62/62 Direct Mode tests + GenVM lint 3/3 VERIFIED. Real five-validator local Studio challenge-reversal integration is being checked separately. This report is not a production-safety certification.**
+**Status (2026-10-15): 63/63 Direct Mode tests + GenVM lint 3/3 VERIFIED. Real five-validator local Studio challenge-reversal integration is being checked separately. This report is not a production-safety certification.**
 
 ## Exact verifiable evidence
 
 - GitHub branch: https://github.com/maho0638/semanticescrow-genlayer/tree/audit/phase5-dispute-appeal-20261015
-- Complete financial + challenge regression: https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38704666894 (**SUCCESS**, 62 passed, 0 failed, lint 3/3, model consistency 18,203 assertions).
+- Complete financial + challenge regression: https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38705016435 (**SUCCESS**, 63 passed, 0 failed, lint 3/3, model consistency 18,203 assertions).
 - Local five-validator challenge test: https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38704521813 (must inspect final result before claiming success).
 - Prior tested genuine local consensus and payout/refund intents: https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38700525100 (5 validator identities; 3 agree / 2 idle; **not** unanimous).
 
@@ -20,7 +20,7 @@
 7. **Mutual cancellation** remains a two-party signature handshake and does not pause challenge expiry; no extension/replay once queued.
 8. **Validator robustness:** leader and validators independently fetch committed source bytes and classify against frozen rubric using the pinned `gl.vm.run_nondet` interface. Validation failure does not force arbitrary `APPROVED`.
 
-## Stage-5 executed Direct Mode regression paths (23 new tests)
+## Stage-5 executed Direct Mode regression paths (24 new tests)
 
 - Buyer approval→challenge→rejection→refund, seller rejection→challenge→approval→payout.
 - Both losing-party permissions and attackers' failures.
@@ -28,7 +28,7 @@
 - Replay, duplicate hostname/content hash, 512-byte justification bounds, original 5-source + supplemental 2-source success, max 2 supplemental limit.
 - INCONCLUSIVE, unavailable/mismatched supplemental evidence; no verified new evidence cannot reverse.
 - Unauthorized reassessment; second-appeal prevention; mutual cancellation versus challenge; terminal stage cannot reopen; pending cancellation cannot pause expiry.
-- Full ledger conservation and pending no-transfer checks.
+- All 7 initial+supplemental sources hash-verified end-to-end, full ledger conservation and pending no-transfer checks.
 
 ## Contract-level challenges ARE NOT protocol validator appeals
 
