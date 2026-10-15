@@ -23,6 +23,9 @@ if os.environ.get("SEMANTICESCROW_SDK_0_2_EMULATION") == "1":
     sdk_compat.import_address = lambda: _legacy_types().Address
     sdk_compat.import_lazy = lambda: _legacy_types().Lazy
     loader.import_calldata = _legacy_cd
+    # wasi_mock imported import_calldata by value at module import time; patch
+    # that bound symbol too, otherwise every old WebRequest returns None.
+    wasi_mock.import_calldata = _legacy_cd
     loader.import_address = lambda: _legacy_types().Address
     loader.import_lazy = lambda: _legacy_types().Lazy
     from gltest.direct.vm import VMContext
