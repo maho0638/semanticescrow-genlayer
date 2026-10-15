@@ -115,7 +115,9 @@ except Exception as exc:
     msg=re.sub(r"0x[0-9a-fA-F]{32,}","0x[public_hex]",str(exc))
     safe="".join(c if 32<=ord(c)<127 else " " for c in msg)
     print("SE7_GENLAYER","PUBLIC_ERROR_SUMMARY",safe[:450],flush=True)
-    for tb in traceback.extract_tb(exc.__traceback__)[-8:]:
+    frames=traceback.extract_tb(exc.__traceback__)
+    print("SE7_GENLAYER","FRAME_COUNT",len(frames),flush=True)
+    for tb in frames[:14]+frames[-3:]:
         print("SE7_GENLAYER","ERROR_FRAME",tb.filename.rsplit("/",1)[-1].rsplit("\\",1)[-1],
               tb.name,tb.lineno,flush=True)
     caused=exc.__cause__
