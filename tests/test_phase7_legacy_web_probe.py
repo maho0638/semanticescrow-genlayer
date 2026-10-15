@@ -7,7 +7,9 @@ import pytest
 
 @pytest.mark.skipif(os.getenv("SEMANTICESCROW_SDK_0_2_EMULATION")!="1",
                     reason="old GenVM SDK source emulation only")
-def test_legacy_web_mock_decodes_response(direct_vm):
+def test_legacy_web_mock_decodes_response(direct_vm, direct_deploy):
+    from test_phase2_contract import deploy
+    deploy(direct_vm,direct_deploy)  # load pinned SDK module before direct web call
     direct_vm.mock_web(r"proof-a\\.example", {
         "status":200,
         "body":"Release version 4.2 completed and accepted on 2026-10-10."
