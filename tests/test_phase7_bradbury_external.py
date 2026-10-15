@@ -12,6 +12,7 @@ from phase7_evm_receipt import verify_confirmed_value_transfer
 from phase7_legacy_compat import require_legacy_bradbury
 from phase7_schema_compat import bind_verified_schema
 from phase7_deploy_preflight import preview_deploy,install_deploy_gas_headroom
+from phase7_rpc_diagnostics import install_rpc_diagnostics
 BUYER=Account.from_key(os.environ["ACCOUNT_PRIVATE_KEY_1"])
 SELLER=Account.from_key(os.environ["ACCOUNT_PRIVATE_KEY_2"])
 VALUE=10**14
@@ -79,6 +80,7 @@ def test_bradbury_real_ghost_refund():
     checked=preview_deploy(c,fac.contract_code)
     print("SE7_PUBLIC_STEP DEPLOY_SIMULATION_PASS",checked["estimated_gas"],checked["padded_gas"],flush=True)
     install_deploy_gas_headroom(c)
+    install_rpc_diagnostics(c)
     print("SE7_PUBLIC_STEP DEPLOY_BEGIN",flush=True)
     try:
         d=fac.deploy_contract_tx(account=buyer,fees=fees,wait_until="finalized",

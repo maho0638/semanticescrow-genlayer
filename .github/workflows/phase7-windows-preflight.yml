@@ -13,6 +13,8 @@ on:
       - 'tests/test_phase7_bradbury_readonly.py'
       - 'tools/phase7_schema_compat.py'
       - 'tools/phase7_deploy_preflight.py'
+      - 'tools/phase7_rpc_diagnostics.py'
+      - 'tests/test_phase7_rpc_diagnostics.py'
       - 'tests/test_phase7_deploy_preflight.py'
       - 'tests/test_phase7_schema_compat.py'
       - 'tests/test_phase7_schema_live.py'
@@ -48,6 +50,7 @@ jobs:
           python -m pytest -q tests/test_phase7_legacy_sdk_path.py
           python -m pytest -q tests/test_phase7_schema_compat.py
           python -m pytest -q tests/test_phase7_deploy_preflight.py
+          python -m pytest -q tests/test_phase7_rpc_diagnostics.py
           # Studio-dev live compilation is gated independently by the user-side
           # --diagnose-only and its own read-only schema workflow. Do not make
           # local/offline unit regressions depend on hosted compiler availability.
