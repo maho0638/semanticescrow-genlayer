@@ -157,3 +157,19 @@ The user ran the Windows PowerShell/gltest escrow scenario after a successful fr
 
 **Verification boundary:** These source and CI checks do not show that actual Bradbury deployment, custody/refund, or failing child-message recovery works. Require successful Windows free `--diagnose-only`, then a separate new temporary test GEN wallet and explicit onchain GenLayer + Ghost beneficiary receipt/balance proof before considering Stage 7 complete. Do not use valuable production funds.
 
+## 2026-10-15 — Compact Bradbury candidate verified offline and schema-compiled
+
+After the third Windows signed attempt (fresh temporary buyer `0x5FF26d32Ae57cdE75C741aC3a7E4cdF352e285B5` with **2 TEST GEN**), stage 7 again stopped at GenLayer `DeploymentError`. SDK legacy ABI, official Studio-dev 17-method schema, 25.4M-gas unsent deployment simulation and 30.53M-gas headroom all passed. Signed seller EVM funding 0.01 TEST GEN (tx `0x9f4309c5fd221007af6d91b6617632d5c7a53f726ac518d16034ed82608931f1`) succeeded. The attempted deployment itself never reached a transaction receipt.
+
+Independent chain verification: <https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38781700731> chain ID 4221, buyer latest and pending nonce **1** (only the seller funding transfer), buyer balance **1,989,996,062,500,000,000 wei**, seller transfer receipt status 0x1. Keys were ephemeral and not retained. Do not fund these expired addresses.
+
+Possible related Bradbury hard cap: <https://github.com/genlayerlabs/genlayer-cli/issues/419> reports deployment transactions at **16,000,000 gas or above rejected**, distinct from undersized gas <https://github.com/genlayerlabs/genlayer-cli/issues/402>. This is supporting circumstantial evidence, **not yet a confirmed RPC diagnosis** for SemanticEscrow. An isolated Windows test branch added sanitized `eth_sendRawTransaction` instrumentation to distinguish error codes from gateway transport errors if a future test is permitted.
+
+Without spending any further GEN, the original `contracts/semantic_escrow.py` **31,197 byte**, **25,444,878 gas** version was compacted under explicit source/ABI hash assertions. Aggressive minifier initially broke a public `str` annotation and renamed `verdict_prompt`, caught by ABI and adversarial tests. Both were corrected. Final candidate **15,842 bytes**, SHA-256 **24cee2dd31e38cde646911fb5ae6ca1c0f46b82b8349ea4919199119115a94d5**, keeps 17 public methods and passes:
+- **153/153 GenLayer Direct Mode contract behavior tests** and **GenVM lint 3/3**: <https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38784369780>.
+- **63/63 compatible SDK, gas, RPC/error-redaction and wallet relay tests**, plus above 153, and chain 4221 read-only exact deploy simulation with gas **13,591,340** + conservative **14,950,474** capped to less than 15M: <https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38785228880>.
+- **17/17 method real official Studio-dev schema compiler verification**: <https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38785953388>.
+- Adjusted live test sequence: seller gas funding now happens *only after* signed deployment, creation and cancel proposal succeed, so repeated early deployment errors no longer waste the seller funding transfer. Isolated static safety test: <https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38786164669>.
+
+Full compact source, matching SHA-pinned schema validator and test runner live only on isolated branch `test/phase7-compact-bradbury-20261015`. `main` remains unchanged and no PR/portal submission was created. **No compact-contract signed deployment has been sent yet, and actual beneficiary refund transfer/settlement still unproven. Do NOT call phase 7 finished or ready for production until genuine buyer/child GEN transfer receipts and balances are verified and child-transfer failures are addressed.**
+
