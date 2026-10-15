@@ -77,3 +77,19 @@ Cloudflare sources:
 - https://developers.cloudflare.com/waf/custom-rules/skip/
 
 **Operational consequence:** Bradbury end-to-end escrow transfer and EVM/Ghost recipient credit remain unverified until the operator corrects challenge handling or supplies an official supported accessible GenLayer RPC. Never route keys through random proxies, or send test GEN to expired ephemeral wallet addresses.
+
+## 2026-10-15 — Bradbury Windows user-funded first-attempt incident
+
+**Status: FAILED; Phase 7 real beneficiary refund remains UNVERIFIED.**
+
+After the user's PowerShell successfully passed the Bradbury GenLayer RPC and read-only SDK chain/account checks through the local PowerShell loopback bridge, two transient test accounts were generated in process memory. The user supplied **5 Bradbury TEST GEN** to the publicly displayed buyer address `0xFd9D26a2bAf8B26a21DF64D6bEE54ed50823Bc18`. The runner printed `TEST GEN RECEIVED 5000000000000000000 wei`, then terminated with only a generic `AssertionError` class; it suppressed the exact test stack frame. No successful Intelligent Contract deployment, deal, or refund was demonstrated.
+
+Independent **read-only** public L2 inspection:
+- https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38755660435 — Bradbury chain 4221, EOA latest/pending nonce **1** and balance **4,989,996,626,586,250,000 wei** after the failed run; exactly one EVM outbound transaction.
+- https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38756560311 — that outbound transaction `0x5c4d81b873d6f5d86acf6082565c4eac8ce2b536e3eadcd4e9e291fb7aed0df3` transferred **10,000,000,000,000,000 wei (0.01 GEN)** to `0x351714b6052f66cf62986fe013868e401c8df3c7` in block `0x181270c`; EVM receipt status **0x1**, successful. No second outgoing EVM transaction was observed. The account's diminished balance reflects the transfer plus network fees.
+
+**Important limits:** The exact Python assertion is not recoverable from the captured output; never assert the transaction itself failed, and do not guess which following fee quote / deployment substep failed. The runner terminated and no account secret was saved. Therefore the remaining ephemeral account balance is not spendable using the available test tooling. This operational key-retention defect must be addressed before any further user-funding request. **Do not fund the expired EOA again.**
+
+On isolated `test/phase7-windows-bradbury-20261015`, subsequent technical work added robust EVM receipt format checks, additional public step checkpoints, pre-funding live fee-quote and ABI-readback gates, and offline tests. CI https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38756963913 passed **153/153 historical contract regression**, **19 EVM receipt tests**, **2 loopback relay tests**, **3/3 GenVM lint**. These tests are **not** public-network proof and did not spend any more GEN.
+
+Safe release gate: prior to accepting new test GEN, adopt a user-approved locally recoverable test-wallet strategy (e.g. Windows DPAPI-encrypted local backup, with no secret sent to GitHub/ChatGPT), or a tested alternate mechanism that preserves signing availability across failures. Restore signed-test diagnostic granularity without leaking keys. No contract deploy/merge/Portal/main actions authorized by this incident.
