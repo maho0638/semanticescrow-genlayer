@@ -27,4 +27,6 @@ jobs:
         run: |
           python -m compileall -q contracts tests tools/phase7_bradbury_windows.py
           genvm-lint lint contracts/semantic_escrow.py --json
+          export ACCOUNT_PRIVATE_KEY_1="$(python -c 'from eth_account import Account; print(Account.create().key.hex())')"
+          export ACCOUNT_PRIVATE_KEY_2="$(python -c 'from eth_account import Account; print(Account.create().key.hex())')"
           python -m pytest -q tests/test_phase2_contract.py tests/test_phase4_payment.py tests/test_phase5_disputes.py tests/test_phase6_adversarial.py tests/test_phase7_intents.py
