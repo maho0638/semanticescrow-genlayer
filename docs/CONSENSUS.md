@@ -20,7 +20,7 @@ Rules: positive `APPROVED` requires every mandatory rubric item PASS, >=2 valid 
 
 ## Leader / validator
 
-In `gl.vm.run_nondet_unsafe(leader_fn,validator_fn)`: leader fetches sources, validates bytes, runs bounded rubric classification, proposes normalized fields. Validator independently refetches and rehashes committed bytes, independently re-derives ordered rubric outcomes and checks strict identity of `outcome`, `rubric_results`, `verified_source_hashes` and `reason_code` (ignores prose explanation). Validator must check `gl.vm.Return` type; reject `UserError`/`VMError`, malformed payloads and any mismatch. False/disagreement must not fall back to approving leader fields. No nondeterministic function is allowed to mutate storage or queue GEN value messages.
+In `gl.vm.run_nondet(leader_fn,validator_fn)`: leader fetches sources, validates bytes, runs bounded rubric classification, proposes normalized fields. Validator independently refetches and rehashes committed bytes, independently re-derives ordered rubric outcomes and checks strict identity of `outcome`, `rubric_results`, `verified_source_hashes` and `reason_code` (ignores prose explanation). Validator must check `gl.vm.Return` type; reject `UserError`/`VMError`, malformed payloads and any mismatch. False/disagreement must not fall back to approving leader fields. No nondeterministic function is allowed to mutate storage or queue GEN value messages.
 
 Deterministic code stores **only** the accepted validated verdict and immutable evidence pointer. A lack of validator agreement means state does not change, and later calls can retry within the fixed review deadline. LLM semantic equivalence is not formal truth; prompt-injection, hallucinations, untrustworthy source ownership, dynamic sources and model/provider failure remain risks.
 
@@ -29,3 +29,7 @@ Deterministic code stores **only** the accepted validated verdict and immutable 
 Initial verdict is append-only. Challenge adds supplemental evidence (>=1 unique new content hash) and an immutable note; validator re-evaluates *original + supplemental* against the unchanged rubric, applying the same hard source checks and typed output schema. Only one challenge; no buyer-controlled veto overriding source-qualified approval without independently validated rejection. Inconclusive challenge expiry falls back to the first qualified verdict.
 
 See [security boundaries](SECURITY.md) and official [Equivalence Principle](https://docs.genlayer.com/developers/intelligent-contracts/equivalence-principle).
+
+
+## Pinned runner compatibility (phase 3)
+The vendored py-genlayer runner pinned in this repository exposes `gl.vm.run_nondet`, but **not** `run_nondet_unsafe`. The latter produced a real Studio `AttributeError` during `assess`. The implementation uses `run_nondet` with a validator that catches its own exceptions and returns `False` on mismatch. Both functions have the same intended no-extra-validator-sandbox model for this pinned runner; this does not change escrow policy. Verify with Phase-3 Studio receipts, not by lint alone.

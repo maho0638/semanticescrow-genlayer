@@ -393,7 +393,7 @@ class SemanticEscrow(gl.contract.Contract):
             except Exception:
                 return False
 
-        evidence = gl.vm.run_nondet_unsafe(leader_fn, validator_fn)
+        evidence = gl.vm.run_nondet(leader_fn, validator_fn)
         fail_unless(isinstance(evidence, dict) and set(evidence) == {"observations", "labels"},
                     "invalid consensus result")
         fail_unless(len(evidence["observations"]) == len(stable_sources), "observations shape")
