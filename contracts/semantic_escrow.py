@@ -417,7 +417,20 @@ class SemanticEscrow(gl.contract.Contract):
                         "invalid observed digest")
             fail_unless(x["integrity"] != "VERIFIED" or x["observed_sha256"] == src["sha256"],
                         "false verified digest")
-        outcome, reason = outcome_for(stable_rubric, evidence)
+        # A challenge is only allowed to replace the first verdict when at
+        # least one freshly committed *supplemental* source actually verified.
+        # Otherwise an attacker could force a new random LLM judgment using
+        # the original two sources plus an invented/unreachable URL.
+        if challenge_round:
+            novel = evidence["observations"][len(original):]
+            if not any(x["integrity"] == "VERIFIED" for x in novel):
+                if any(x["integrity"] == "UNAVAILABLE" for x in novel):
+                    raise gl.vm.UserError("challenge evidence unavailable; retry")
+                outcome, reason = "INCONCLUSIVE", "NO_VERIFIED_NEW_CHALLENGE_EVIDENCE"
+            else:
+                outcome, reason = outcome_for(stable_rubric, evidence)
+        else:
+            outcome, reason = outcome_for(stable_rubric, evidence)
         digest = json_hash(stable_sources)
         self._record(idx, d["active_index"], 1 if challenge_round else 0,
                      outcome, reason, digest, evidence)
