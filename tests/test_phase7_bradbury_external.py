@@ -13,7 +13,7 @@ from phase7_legacy_compat import require_legacy_bradbury
 from phase7_schema_compat import bind_verified_schema
 from phase7_deploy_preflight import preview_deploy,install_deploy_gas_headroom
 from phase7_rpc_diagnostics import install_rpc_diagnostics
-from phase7_legacy_receipts import install_legacy_bradbury_reader
+from phase7_legacy_receipts import install_legacy_bradbury_reader, is_finalized_success
 BUYER=Account.from_key(os.environ["ACCOUNT_PRIVATE_KEY_1"])
 SELLER=Account.from_key(os.environ["ACCOUNT_PRIVATE_KEY_2"])
 VALUE=10**14
@@ -24,7 +24,7 @@ def query(p,m,args):
 def balance(p,addr):
     return int(query(p,"eth_getBalance",[addr,"latest"]),16)
 def ok(receipt,step):
-    passed=tx_execution_succeeded(receipt)
+    passed=is_finalized_success(receipt) and tx_execution_succeeded(receipt)
     print("SE7_PUBLIC_CONSENSUS",step,"PASS" if passed else "FAIL",flush=True)
     assert passed
 def send(method,args,fees,value=0):
@@ -47,7 +47,7 @@ def test_bradbury_real_ghost_refund():
     schema = bind_verified_schema(fac)
     print("SE7_PUBLIC_STEP SCHEMA_LOOKUP_PASS", len(schema["methods"]),flush=True)
     print("SE7_PUBLIC_STEP DEPLOY_SIMULATION_BEGIN",flush=True)
-    checked=preview_deploy(c,fac.contract_code)
+    checked=preview_deploy(c,fac.contract_code,buyer.address)
     print("SE7_PUBLIC_STEP DEPLOY_SIMULATION_PASS",checked["estimated_gas"],checked["padded_gas"],flush=True)
     install_deploy_gas_headroom(c)
     install_rpc_diagnostics(c)
