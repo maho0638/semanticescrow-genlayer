@@ -40,3 +40,47 @@ for rnd in (0,):
                 print("SE7_VM_TRACE","LOG",i,clean[:600],flush=True)
     except (requests.RequestException,ValueError,TypeError) as exc:
         print("SE7_VM_TRACE","EXCEPTION_CLASS",type(exc).__name__,flush=True)
+
+
+# Explorer and non-debug public receipt endpoint can expose user-error details,
+# even if node-level gen_dbg_traceTransaction is disabled. Read-only only.
+try:
+    response=requests.post(RPC,json={"jsonrpc":"2.0","id":13,
+        "method":"gen_getTransactionReceipt",
+        "params":[{"txId":TXID}]},timeout=25)
+    if response.status_code==200:
+        payload=response.json()
+        if payload.get("error"):
+            e=payload["error"]
+            print("SE7_VM_TRACE","PUBLIC_RECEIPT_RPC_ERROR",
+                  e.get("code") if isinstance(e,dict) else "UNKNOWN",flush=True)
+        else:
+            result=payload.get("result")
+            print("SE7_VM_TRACE","PUBLIC_RECEIPT_FIELDS",
+                  ",".join(sorted(result.keys()))[:520] if isinstance(result,dict) else type(result).__name__,flush=True)
+            if isinstance(result,dict):
+                for name in ("status","result","txExecutionResult",
+                             "txExecutionResultName","error","errorMessage","executionError"):
+                    if name in result:
+                        print("SE7_VM_TRACE","PUBLIC_RECEIPT",name,
+                              str(result[name])[:500],flush=True)
+    else:
+        print("SE7_VM_TRACE","PUBLIC_RECEIPT_HTTP",response.status_code,flush=True)
+except (requests.RequestException,ValueError,TypeError) as exc:
+    print("SE7_VM_TRACE","PUBLIC_RECEIPT_EXCEPTION",type(exc).__name__,flush=True)
+try:
+    url="https://explorer-bradbury.genlayer.com/tx/"+TXID
+    page=requests.get(url,timeout=20,headers={"User-Agent":"Mozilla/5.0"})
+    html=page.text
+    print("SE7_VM_TRACE","EXPLORER_HTTP",page.status_code,
+          "HTML_CHARS",len(html),flush=True)
+    for term in ("Execution Error","exit_code","GenVM Execution",
+                 "stderr","Error Message"):
+        idx=html.find(term)
+        if idx!=-1:
+            nearby=html[max(0,idx-100):idx+350]
+            sanitized="".join(c if 32<=ord(c)<127 else " " for c in nearby)
+            print("SE7_VM_TRACE","EXPLORER_HAS",term,
+                  "CONTEXT",sanitized[:450],flush=True)
+except (requests.RequestException,ValueError) as exc:
+    print("SE7_VM_TRACE","EXPLORER_EXCEPTION",type(exc).__name__,flush=True)
