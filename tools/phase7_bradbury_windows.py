@@ -46,9 +46,13 @@ def main():
         env_preflight.pop("ACCOUNT_PRIVATE_KEY_2",None)
     # Print only explicitly authored public checkpoints, never raw gltest logs.
     for line in (check.stdout or "").splitlines():
-        i=line.find("SE7_PUBLIC_")
-        if i>=0:
-            print(line[i:i+280],flush=True)
+        # Do not confuse pytest's source-code excerpts with real checkpoints.
+        # Actual stdout is either a bare marker or a pytest test node prefix.
+        stripped=line.strip()
+        if stripped.startswith("SE7_PUBLIC_"):
+            print(stripped[:280],flush=True)
+        elif stripped.startswith("tests/") and " SE7_PUBLIC_" in stripped:
+            print(stripped.split(" SE7_PUBLIC_",1)[1].join(("SE7_PUBLIC_",""))[:280],flush=True)
     if check.returncode!=0:
         failures=sorted(set(re.findall(
             r"\b(?:AssertionError|RuntimeError|TimeoutError|ImportError|"
@@ -58,6 +62,9 @@ def main():
         print("DO NOT SEND GEN. RECHECK SDK/RPC CONFIGURATION.",flush=True)
         return 4
     print("GENLAYER SDK READ-ONLY PREFLIGHT OK - SAFE TO REQUEST TEST FUNDING",flush=True)
+    if "--diagnose-only" in sys.argv:
+        print("DIAGNOSTIC COMPLETE. NO TEST WALLET FUNDING REQUESTED.",flush=True)
+        return 0
     expires=datetime.datetime.now(datetime.timezone.utc)+datetime.timedelta(seconds=END_AFTER)
     print("SEND ONLY BRADBURY TEST GEN TO THIS NEW ADDRESS:",flush=True)
     print(buyer.address,flush=True)
