@@ -103,10 +103,13 @@ def main():
         env.pop("ACCOUNT_PRIVATE_KEY_1",None)
         env.pop("ACCOUNT_PRIVATE_KEY_2",None)
     for line in (proc.stdout or "").splitlines():
-        # Verbose pytest prefixes the first checkpoint with a node id.
-        i=line.find("SE7_PUBLIC_")
-        if i>=0:
-            print(line[i:i+260],flush=True)
+        # Keep only genuine public markers; pytest also prints failed-source
+        # excerpts with marker text inside quotes, which are not checkpoints.
+        stripped=line.strip()
+        if stripped.startswith("SE7_PUBLIC_"):
+            print(stripped[:260],flush=True)
+        elif " SE7_PUBLIC_" in stripped and "::test_" in stripped:
+            print(("SE7_PUBLIC_"+stripped.split(" SE7_PUBLIC_",1)[1])[:260],flush=True)
     if proc.returncode:
         # Only known project source frames, never raw receipts, headers,
         # env/private keys, URLs or raw exception text.
