@@ -5,6 +5,7 @@ on:
     paths:
       - .github/workflows/phase7-build-compact.yml
       - tests/test_phase7_deploy_preflight.py
+      - tools/phase7_compact_onchain_smoke.py
 permissions:
   contents: write
 jobs:
