@@ -3,6 +3,7 @@
 No RPC, no wallet funding and no private keys are persisted.
 """
 from eth_account import Account
+from eth_abi import decode
 from genlayer_py.chains.testnet_bradbury import testnet_bradbury
 from genlayer_py.client.genlayer_client import GenLayerClient
 from genlayer_py.contracts.actions import _encode_add_transaction_data
@@ -30,4 +31,13 @@ def test_native_sdk_default_uses_verified_legacy_selector_without_fee_policy():
     assert calldata[:10].lower() == "0xe71d5196"
     assert isinstance(calldata,str)
     assert len(calldata)>300
-    assert calldata.endswith("0000000000000000000000000000000000000000000000000000000000000000")
+    decoded = decode(
+        ["address", "address", "uint256", "uint256", "bytes", "uint256"],
+        bytes.fromhex(calldata[10:]),
+    )
+    assert decoded[0].lower() == buyer.address.lower()
+    assert decoded[1].lower() == seller.address.lower()
+    assert decoded[2] == 5
+    assert decoded[3] == 3
+    assert decoded[4] == b"\\x12\\x34"
+    assert decoded[5] == 0
