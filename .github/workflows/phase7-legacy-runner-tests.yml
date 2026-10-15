@@ -43,9 +43,10 @@ jobs:
           set -euo pipefail
           mkdir -p "$PWD/.legacy-genvm"
           curl -fL --retry 2 --connect-timeout 20 --max-time 150 \
-            https://github.com/genlayerlabs/genvm/releases/download/v0.2.16/genvm-linux-amd64.tar.xz \
+            https://github.com/genlayerlabs/genvm/releases/download/v0.2.16/genvm-linux-amd64-executor.tar.xz \
             -o /tmp/genvm-v0216.tar.xz
-          tar -tJf /tmp/genvm-v0216.tar.xz | grep -E '(runners|py-genlayer)' | head -n 12 || true
+          tar -tJf /tmp/genvm-v0216.tar.xz | head -n 22 || true
+          tar -tJf /tmp/genvm-v0216.tar.xz | grep -E '(runners|py-genlayer)' | head -n 22 || true
           tar -xJf /tmp/genvm-v0216.tar.xz -C "$PWD/.legacy-genvm"
           found="$(find "$PWD/.legacy-genvm" -type f | grep '/py-genlayer/1j/b45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6' | head -n 1 || true)"
           if [ -z "$found" ]; then
