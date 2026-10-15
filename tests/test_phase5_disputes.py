@@ -331,3 +331,34 @@ def test_verdicts_distinguish_app_challenge_from_protocol_appeal():
     assert "def challenge(" in t and "def assess_challenge(" in t
     assert "gl.vm.run_nondet(" in t
     assert "sim_appeal" not in t
+
+
+def test_unverified_new_source_cannot_overturn_first_verdict(direct_vm,direct_deploy):
+    c,x,_=first(direct_vm,direct_deploy,["PASS","PASS"])
+    case_challenge(direct_vm,c,x,supplemental())
+    direct_vm.clear_mocks()
+    add_source_mocks(direct_vm,[(A,BODY_A),(B,BODY_B)])
+    direct_vm.mock_web(r"proof-c\.example",{"status":200,"body":"different bytes from SHA256 commitment"})
+    direct_vm.mock_llm(r"evidence auditor",'{"labels":["FAIL","PASS"]}')
+    assert c.assess_challenge(x)=="INCONCLUSIVE"
+    m=stage(c)
+    assert m["state"]=="CHALLENGED"
+    assert m["first_verdict"]=="APPROVED" and m["final_verdict"]==""
+    decision=json.loads(c.get_assessment(x,0,1))
+    assert decision["reason"]=="NO_VERIFIED_NEW_CHALLENGE_EVIDENCE"
+    assert account(c,x)["remaining_locked"]==50
+
+
+def test_unavailable_supplement_cannot_change_verdict_using_original_sources(direct_vm,direct_deploy):
+    c,x,_=first(direct_vm,direct_deploy,["PASS","PASS"])
+    case_challenge(direct_vm,c,x,supplemental())
+    direct_vm.clear_mocks()
+    add_source_mocks(direct_vm,[(A,BODY_A),(B,BODY_B)])
+    direct_vm.mock_web(r"proof-c\.example",{"status":503,"body":""})
+    direct_vm.mock_llm(r"evidence auditor",'{"labels":["FAIL","PASS"]}')
+    with direct_vm.expect_revert("challenge evidence unavailable; retry"):
+        c.assess_challenge(x)
+    assert stage(c)["state"]=="CHALLENGED"
+    assert stage(c)["final_verdict"]==""
+    assert account(c,x)["payout_queued_total"]==0
+    assert account(c,x)["refund_queued_total"]==0
