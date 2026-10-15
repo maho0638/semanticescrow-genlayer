@@ -9,6 +9,7 @@ from pathlib import Path as _Path
 import sys
 sys.path.insert(0, str(_Path(__file__).resolve().parents[1] / "tools"))
 from phase7_evm_receipt import verify_confirmed_value_transfer
+from phase7_legacy_compat import require_legacy_bradbury
 BUYER=Account.from_key(os.environ["ACCOUNT_PRIVATE_KEY_1"])
 SELLER=Account.from_key(os.environ["ACCOUNT_PRIVATE_KEY_2"])
 VALUE=10**14
@@ -29,6 +30,10 @@ def test_bradbury_real_ghost_refund():
     c=get_gl_client()
     p=c.provider
     assert int(query(p,"eth_chainId",[]),16)==4221
+    print("SE7_PUBLIC_LEGACY_PROTOCOL_GATE_BEGIN", flush=True)
+    fees=require_legacy_bradbury(c)
+    assert fees is None
+    print("SE7_PUBLIC_LEGACY_PROTOCOL_GATE_PASS", flush=True)
     buyer=get_default_account()
     seller=next(a for a in get_accounts() if a.address.lower()==SELLER.address.lower())
     assert buyer.address.lower()==BUYER.address.lower()
@@ -63,14 +68,7 @@ def test_bradbury_real_ghost_refund():
     else:
         raise AssertionError("seller funding receipt missing after 90 seconds")
     print("SE7_PUBLIC_SELLER_FUNDED",txid,flush=True)
-    print("SE7_PUBLIC_STEP DEPLOY_FEE_QUOTE_BEGIN",flush=True)
-    q=c.estimate_transaction_fees({"leaderTimeunitsAllocation":100,
-         "validatorTimeunitsAllocation":200,
-         "executionBudgetPerRound":10**15,
-         "totalMessageFees":10**15,"appealRounds":0,"rotations":[3]})
-    assert "feeValue" in q and "distribution" in q
-    fees={"distribution":q["distribution"],"feeValue":q["feeValue"]}
-    print("SE7_PUBLIC_STEP DEPLOY_FEE_QUOTE_OK",flush=True)
+    print("SE7_PUBLIC_STEP VERIFIED_LEGACY_NO_FEE_ESTIMATE",flush=True)
     fac=get_contract_factory(contract_file_path=Path("contracts/semantic_escrow.py").resolve())
     print("SE7_PUBLIC_STEP DEPLOY_BEGIN",flush=True)
     d=fac.deploy_contract_tx(account=buyer,fees=fees,wait_until="finalized",

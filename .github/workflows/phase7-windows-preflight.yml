@@ -11,6 +11,8 @@ on:
       - 'tests/test_phase7_evm_receipt.py'
       - 'tools/phase7_evm_receipt.py'
       - 'tests/test_phase7_bradbury_readonly.py'
+      - 'tools/phase7_legacy_compat.py'
+      - 'tests/test_phase7_legacy_compat.py'
       - 'gltest.config.yaml'
       - '.github/workflows/phase7-windows-preflight.yml'
 permissions:
@@ -36,4 +38,5 @@ jobs:
           export ACCOUNT_PRIVATE_KEY_2="$(python -c 'from eth_account import Account; print(Account.create().key.hex())')"
           python -m pytest -q tests/test_phase7_windows_relay.py
           python -m pytest -q tests/test_phase7_evm_receipt.py
+          python -m pytest -q tests/test_phase7_legacy_compat.py
           python -m pytest -q tests/test_phase2_contract.py tests/test_phase4_payment.py tests/test_phase5_disputes.py tests/test_phase6_adversarial.py tests/test_phase7_intents.py
