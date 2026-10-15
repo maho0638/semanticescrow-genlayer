@@ -125,7 +125,7 @@ def test_studio_five_validator_deposit_submit_and_consensus():
     tx=factory.deploy_contract_tx(account=buyer,transaction_context=context,
                                   consensus_max_rotations=3,fees=fees,wait_until="finalized")
     _record(tx,"DEPLOY")
-    from gltest.contracts.utils import extract_contract_address
+    from gltest.utils import extract_contract_address
     contract_addr=extract_contract_address(tx)
     schema=factory._get_schema_with_fallback()
     print("SE_STAGE4: SCHEMA_AVAILABLE",schema is not None,flush=True)
