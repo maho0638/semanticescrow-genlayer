@@ -1,0 +1,50 @@
+name: SemanticEscrow Phase 7 official GenVM v0.2.16 packaged runner attestation
+on:
+  push:
+    branches: [test/phase7-bradbury-runtime-compat-20261015]
+    paths:
+      - '.github/workflows/phase7-official-v0216-artifact.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-official-release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Download immutable official GenVM v0.2.16 universal release
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL='https://github.com/genlayerlabs/genvm/releases/download/v0.2.16/genvm-universal.tar.xz'
+          curl --fail --location --retry 3 --retry-delay 2 --max-time 720 \
+            --silent --show-error "$URL" -o /tmp/se-genvm-official-v0216.tar.xz
+          # Digest copied from GitHub release v0.2.16 asset metadata.
+          echo '4f0b358ec98ec148be9b95cdfb0f0e1a6cbe64da0194fdfac3fffc6f5d1d93e2  /tmp/se-genvm-official-v0216.tar.xz' | sha256sum --check
+          echo 'SE7_OFFICIAL_PACKAGED_RELEASE_SHA256_PASS'
+      - name: Locate pinned runner inside verified official package
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import subprocess
+          p='/tmp/se-genvm-official-v0216.tar.xz'
+          result=subprocess.run(['tar','-tJf',p],capture_output=True,text=True,check=True)
+          files=result.stdout.splitlines()
+          pin='1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6'
+          matches=[x for x in files if 'py-genlayer' in x and pin in x.replace('/','')]
+          print('SE7_PACKAGED_TOTAL_ENTRIES',len(files))
+          print('SE7_PACKAGED_RUNNER_PIN_MATCHES',len(matches))
+          for entry in matches[:5]:
+              print('SE7_PACKAGED_PIN_PATH',entry[:240])
+          if not matches:
+              nearby=[x for x in files if 'py-genlayer' in x]
+              print('SE7_PACKAGED_PY_GENLAYER_ENTRIES',len(nearby))
+              for entry in nearby[:8]:
+                  print('SE7_PACKAGED_PY_GENLAYER_PATH',entry[:240])
+              raise SystemExit('pinned runner not found in official release listing')
+          PY
+          echo 'SE7_OFFICIAL_PACKAGED_RUNNER_PIN_PRESENT (does not attest Bradbury validator deployment)'
