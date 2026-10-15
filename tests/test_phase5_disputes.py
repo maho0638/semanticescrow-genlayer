@@ -329,7 +329,7 @@ def test_verdicts_distinguish_app_challenge_from_protocol_appeal():
     from pathlib import Path
     t=Path("contracts/semantic_escrow.py").read_text(encoding="utf-8")
     assert "def challenge(" in t and "def assess_challenge(" in t
-    assert "gl.vm.run_nondet(" in t
+    assert "gl.vm.run_nondet_unsafe(" in t
     assert "sim_appeal" not in t
 
 

@@ -19,7 +19,7 @@ from pathlib import Path
 import requests
 
 STUDIO_DEV = "https://studio-dev.genlayer.com/api"
-SOURCE_SHA256 = "24cee2dd31e38cde646911fb5ae6ca1c0f46b82b8349ea4919199119115a94d5"
+SOURCE_SHA256 = "fe3994ad850eb6114dba07e281b5826d7e512b1e8576f0ebc07e8c0fc50dc75e"
 REQUIRED_METHODS = frozenset((
     "assess", "assess_challenge", "challenge", "confirm_cancel",
     "create_deal", "deal_count", "get_assessment", "get_deal",

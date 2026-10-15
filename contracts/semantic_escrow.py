@@ -1,5 +1,5 @@
-# v0.3.0
-# { "Depends": "py-genlayer:5jycge4q8k23462jtb0b9fyey1s9qz928sz2nbrd9mg4sxqg2qng" }
+# v0.2.16
+# { "Depends": "py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6" }
 An='milestone does not exist';Am='REFUND_QUEUED';Al='CHALLENGE_REJECT_PENDING';Ak='challenge_sha256';Aj='final_verdict';Ai='domain';Ah='reason';Ag='RUNNING';Af='INVALID_ENCODING';Ae='MISMATCH';Ad='INVALID_SIZE';Ac='HTTP_ERROR';Ab=ValueError;AQ='PAYOUT_QUEUED';AP='CHALLENGED';AO='CHALLENGE_APPROVE_PENDING';AN='REJECT_PENDING';AM='SUBMITTED';AL='initial_deposit';AK='challenge_manifest';AJ='challenge_used';AI='first_verdict';AH='manifest_sha256';AG='FAIL';AF='PASS';AE='UNKNOWN';AD='expected_sha256';AC=enumerate;A7='AWAITING_DELIVERY';A6='challenged_at';A5='assessed_at';A4='submitted_at';A3='deal_id';A2='active_index';A1='APPROVED';A0='INCONCLUSIVE';z='mandatory';y='criteria_items';x='utf-8';w='APPROVE_PENDING';v='cancel_expires_at';u='manifest';t='milestone_index';s='either';r='VERIFIED';q='delivery_due_at';p='0';o=all;n=ord;k='cancel_proposer';j='payout_queued_total';d='terms_digest_sha256';i='terms';h='buyer';g='labels';f='UNAVAILABLE';e='observed_sha256';c=True;b=set;a=list;Z=Exception;X='refund_queued_total';W='remaining_locked';V='seller';U='observations';T='text';S='amount_wei';R=any;Q=dict;O=None;N=bool;M='sha256';L='';K=False;I='milestones';H='url';G='integrity';E='state';D=isinstance;C=len;B=int;import genlayer as gl;from genlayer import Address,u256;from genlayer.storage import DynArray,TreeMap;import hashlib,json;from datetime import datetime,timezone;A8=(1<<256)-1;Y=86400;AR=2*Y;AS=7*Y;A9=2*Y;AT=7*Y;Ao=6000;Ap='nip.io','sslip.io','xip.io','lvh.me','localtest.me','traefik.me','localhost.direct';AU='\u061c\u200e\u200f\u202a\u202b\u202c\u202d\u202e\u2066\u2067\u2068\u2069';AV='\u200b\u200c\u200d\ufeff';AW=2;Av=5;Aq=2
 def A(ok:N,message:str)->O:
 	if not ok:raise gl.vm.UserError(message)
@@ -117,7 +117,7 @@ class SemanticEscrow(gl.contract.Contract):
 			if not D(A,gl.vm.Return):return K
 			try:C=AZ(V,S);B=A.calldata;return D(B,Q)and F(B)==F(C)
 			except Z:return K
-		O=gl.vm.run_nondet(k,n);A(D(O,Q)and b(O)=={U,g},'invalid consensus result');A(C(O[U])==C(S),'observations shape')
+		O=gl.vm.run_nondet_unsafe(k,n);A(D(O,Q)and b(O)=={U,g},'invalid consensus result');A(C(O[U])==C(S),'observations shape')
 		for(B,W)in zip(O[U],S):A(D(B,Q)and b(B)=={H,AD,e,G},'observation format');A(B[H]==W[H]and B[AD]==W[M],'source commitment mismatch');A(B[G]in(r,f,Ac,Ad,Ae,Af),'integrity invalid');A(AX(B[e])or B[e]==L,'invalid observed digest');A(B[G]!=r or B[e]==W[M],'false verified digest')
 		if T:
 			h=O[U][C(Y):]

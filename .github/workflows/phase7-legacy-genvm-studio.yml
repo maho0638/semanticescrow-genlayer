@@ -1,0 +1,164 @@
+name: SemanticEscrow Phase 7 Bradbury runtime v0.2.16 Studio verification
+on:
+  push:
+    branches: [test/phase7-bradbury-runtime-compat-20261015]
+    paths:
+      - '.ci/studio-v123-compose.yml'
+      - '.github/workflows/phase7-legacy-genvm-studio.yml'
+      - 'contracts/semantic_escrow.py'
+      - 'tests/test_studio_phase3.py'
+      - 'gltest.config.yaml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  studio-five-validator:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      COMPOSE_PARALLEL_LIMIT: '1'
+      COMPOSE: .ci/studio-v123-compose.yml
+      PROJECT: se123ci
+      SEMANTICESCROW_RUN_STUDIO: '1'
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.12'
+      - name: Install pinned SDK and Studio test harness
+        run: |
+          python -m pip install genlayer-test==0.30.0rc2 genvm-linter==0.11.0 cloudpickle==3.1.2 pytest==9.1.1
+          python -m pip check
+          genvm-lint lint contracts/semantic_escrow.py --json
+      - name: Validate disposable official Studio stack
+        run: |
+          docker version
+          docker compose -p "$PROJECT" -f "$COMPOSE" config --quiet
+          test "$(docker compose -p "$PROJECT" -f "$COMPOSE" config --services | wc -l)" -eq 6
+      - name: Pull pinned Studio 0.123 images
+        run: docker compose -p "$PROJECT" -f "$COMPOSE" pull
+      - name: Bring up full local consensus
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose -p "$PROJECT" -f "$COMPOSE" up -d consensus-worker
+          for attempt in $(seq 1 36); do
+            state="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' se123ci-consensus-worker-1)"
+            echo "STUDIO_STARTUP_ATTEMPT=$attempt STATE=$state"
+            if [ "$state" = healthy ]; then exit 0; fi
+            if [ "$state" = unhealthy ] || [ "$state" = exited ]; then exit 1; fi
+            sleep 10
+          done
+          exit 1
+      - name: Execute five validator independent Studio localnet tests
+        shell: bash
+        run: |
+          set -uo pipefail
+          set +e # GitHub bash starts with -e; preserve test exit status for sanitized diagnosis
+          # The project also defines Bradbury account placeholders. gltest
+          # resolves them at CLI startup even when running localnet; use two
+          # disposable throwaway keys for parsing only. Do not persist or log.
+          export ACCOUNT_PRIVATE_KEY_1="$(python -c 'from eth_account import Account; print(Account.create().key.hex())')"
+          export ACCOUNT_PRIVATE_KEY_2="$(python -c 'from eth_account import Account; print(Account.create().key.hex())')"
+          gltest tests/test_studio_phase3.py -v -s --network localnet > /tmp/se-studio-private.log 2>&1
+          code=$?
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          lines=Path('/tmp/se-studio-private.log').read_text(errors='replace').splitlines()
+          for line in lines:
+              if 'SE_STAGE3' in line:
+                  row=line.split('SE_STAGE3',1)[1].split('{')[0]
+                  row=re.sub(r'0x[0-9A-Fa-f]{40,}','[WALLET]',row)
+                  print('STUDIO_CHECKPOINT:',row[:240])
+          import collections
+          print('STUDIO_TEST_LOG_LINES:',len(lines))
+          markers=['AssertionError','ValueError','TypeError','AttributeError','ImportError',
+                   'ModuleNotFoundError','DeploymentError','TransactionError','TimeoutError',
+                   'ConnectionError','FileNotFoundError','FAILED','ERROR','Traceback']
+          # Safe diagnostic for CLI validation failures: redact all hex, URLs,
+          # auth values and private-key-looking fields; avoid full log dumps.
+          if len(lines)<=8:
+              for line in lines:
+                  safe=re.sub(r'0x[0-9A-Fa-f]{30,}','[REDACTED_HEX]',line)
+                  safe=re.sub(r'https?://\\S+','[URL]',safe)
+                  safe=re.sub(r'(?i)(private_key|secret|api_key|token)\\s*[=:]\\s*\\S+','[REDACTED]',safe)
+                  print('STUDIO_CLI_VALIDATION:',safe[:190])
+          print('STUDIO_TEST_ERROR_CLASSES:',[p for p in markers if any(p in line for line in lines)])
+          print('STUDIO_TEST_HEADING:')
+          count=0
+          for line in lines[:90]:
+              line=line.strip()
+              if not line or any(x in line.lower() for x in ('private_key','node_config','mnemonic','secret','token=','api_key','mock_llm','mock_response')):
+                  continue
+              if ('SE_STAGE3' not in line and not any(x in line for x in ('Error','FAILED','Exception','Traceback','ImportError','ModuleNotFoundError','platform','test session','collected','INFO:', 'ERROR', 'FAIL','warning', 'INTERNALERROR', 'test_studio_phase3'))):
+                  continue
+              line=line.split('{')[0].split('receipt=')[0].split('=b"')[0]
+              line=re.sub(r'0x[0-9A-Fa-f]{20,}','[REDACTED_HEX]',line)
+              print('STUDIO_LOG_BRIEF:',line[:240])
+              count+=1
+              if count>=22:
+                  break
+          for line in lines[-60:]:
+              line=line.strip()
+              if line.startswith(('E ', 'E   ', 'FAILED tests/', '=== 1 passed','=== 1 failed')):
+                  # Never print receipts, private keys, validator configs, API tokens.
+                  safe=line.split('{')[0].split('receipt=')[0]
+                  safe=re.sub(r'0x[0-9A-Fa-f]{40,}','[REDACTED]',safe)
+                  safe=re.sub(r'(?i)(secret|api.key|private.key|token)\s*[=:]\s*\S+','[REDACTED]',safe)
+                  print('STUDIO_RESULT:',safe[:250])
+          PY
+          exit "$code"
+      - name: Summarize local DB transaction states
+        if: always()
+        shell: bash
+        run: |
+          docker exec se123ci-postgres-1 psql -U postgres -d genlayer_state -At -c "SELECT status, count(*) FROM transactions GROUP BY status ORDER BY status" || true
+      - name: Extract only sanitized GenVM failure classes
+        if: failure()
+        shell: bash
+        run: |
+          set +e
+          docker exec se123ci-postgres-1 psql -X -U postgres -d genlayer_state -At -c "SELECT consensus_data::text FROM transactions WHERE type=2 ORDER BY created_at DESC LIMIT 4" > /tmp/se-private-consensus.jsonl 2>/dev/null
+          docker compose -p "$PROJECT" -f "$COMPOSE" logs --no-color --tail=350 consensus-worker > /tmp/se-private-worker.log 2>/dev/null
+          python - <<'PY'
+          import json,re
+          from pathlib import Path
+          rx=re.compile(r'\b[A-Z][A-Z0-9_]{3,60}\b')
+          exc=re.compile(r'\b([A-Za-z][A-Za-z0-9_]*(?:Error|Exception))(?=:|\b)')
+          sources=[Path('/tmp/se-private-consensus.jsonl'),Path('/tmp/se-private-worker.log')]
+          for p in sources:
+              if not p.exists(): continue
+              s=p.read_text(errors='replace')[:4000000]
+              print('SE_DIAG_SOURCE:',p.name,'length:',len(s))
+              kinds=sorted(set(exc.findall(s)))
+              print('SE_DIAG_EXCEPTION_TYPES:',kinds[:24])
+              tokens=sorted(set(rx.findall(s)))
+              allow={'VM_ERROR','USER_ERROR','NONDSET_EXCEPTION','NONDET_EXCEPTION',
+                     'VALIDATOR_QUORUM_REACHED','OUT_OF_GAS','INSUFFICIENT_FUNDS',
+                     'PANIC','OUT_OF_TIME','LLM_ERROR','WEB_ERROR','HTTP_ERROR',
+                     'INVALID_OPERATION','TLD_FORBIDDEN','RUN_NONDET','INTERNAL_ERROR',
+                     'GENVM_ERROR','FINISHED_WITH_ERROR','FINISHED_WITH_RETURN'}
+              print('SE_DIAG_ERROR_CODE_TOKENS:',[v for v in tokens if v in allow])
+              if 'consensus.jsonl' in p.name:
+                  for line in s.splitlines()[:4]:
+                      try:d=json.loads(line)
+                      except Exception:continue
+                      if not isinstance(d,dict):continue
+                      print('SE_DIAG_CONSENSUS_FIELDS:',sorted(k for k in d if k in ('leader_receipt','validators','votes','result','execution_result','status')))
+                      lead=d.get('leader_receipt') or []
+                      for item in (lead if isinstance(lead,list) else [lead]):
+                          if not isinstance(item,dict):continue
+                          print('SE_DIAG_LEADER_ENUMS:',{k:str(item[k])[:60] for k in ('execution_result','vote') if k in item})
+                          gv=item.get('genvm_result') or {}
+                          if isinstance(gv,dict):
+                              print('SE_DIAG_GENVM_FIELDS:',sorted(k for k in gv if k in ('stderr','result','error_code','raw_error','genvm_log')))
+                              res=gv.get('result')
+                              if isinstance(res,dict):
+                                  print('SE_DIAG_GENVM_KIND:',{k:str(res[k])[:60] for k in ('kind','error_code') if k in res})
+          PY
+      - name: Stop and erase disposable stack
+        if: always()
+        run: docker compose -p "$PROJECT" -f "$COMPOSE" down --volumes --remove-orphans || true
