@@ -45,6 +45,8 @@ def _record(receipt,label):
         from collections import Counter
         import re
         consensus=receipt.get("consensus_data") or {}
+        print("SE_STAGE3_RECEIPT_FIELDS:",[k for k in ("status","status_name","tx_execution_result","tx_execution_result_name","consensus_data","result") if k in receipt],flush=True)
+        print("SE_STAGE3_CONSENSUS_FIELDS:",[k for k in ("leader_receipt","validators","votes","result") if k in consensus],flush=True)
         records=consensus.get("leader_receipt") or []
         records=[records] if isinstance(records,dict) else records
         print("SE_STAGE3_EXECUTION_ENUM:",str(receipt.get("tx_execution_result_name",receipt.get("tx_execution_result","UNKNOWN")))[:65],flush=True)
@@ -58,7 +60,7 @@ def _record(receipt,label):
                 continue
             blob=str(gv.get("stderr",""))[:200000]
             for line in blob.splitlines():
-                match=re.search(r"(?:^|\\.)\\b([A-Za-z][A-Za-z0-9_]*(?:Error|Exception)):",line)
+                match=re.search(r"\\b([A-Za-z][A-Za-z0-9_]*(?:Error|Exception)):",line)
                 if match:
                     kinds[match.group(1)]+=1
             for fname,method in re.findall(r'File "[^"]*/([A-Za-z0-9_.-]{1,60})", line [0-9]+, in ([A-Za-z_][A-Za-z0-9_]*)',blob):
