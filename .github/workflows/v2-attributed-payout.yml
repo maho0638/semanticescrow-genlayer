@@ -67,7 +67,7 @@ jobs:
 
       - name: Compile candidate GenVM v0.2.16 source (not currently deployed)
         run: |
-          python -m py_compile contracts/semantic_escrow_attributed_v2.py
+          python -m py_compile contracts/semantic_escrow_attributed_v2.py tools/v2_attributed_payout_proof.py
           genvm-lint lint contracts/semantic_escrow_attributed_v2.py --json
       - name: Install pinned solc-js and in-memory EVM
         run: |
@@ -78,5 +78,5 @@ jobs:
         run: |
           export ACCOUNT_PRIVATE_KEY_1="$(python -c 'from eth_account import Account;print(Account.create().key.hex())')"
           export ACCOUNT_PRIVATE_KEY_2="$(python -c 'from eth_account import Account;print(Account.create().key.hex())')"
-          python -m pytest -q --maxfail=1 tests/test_v2_ic_router_source.py tests/test_v2_evm_payout_router.py
+          python -m pytest -q --maxfail=1 tests/test_v2_ic_router_source.py tests/test_v2_evm_payout_router.py tests/test_v2_attributed_payout_proof.py
           echo SE_V2_EVM_ATOMIC_IDEMPOTENT_PAYMENT_TESTS_PASS
