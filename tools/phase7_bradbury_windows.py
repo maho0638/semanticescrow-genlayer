@@ -61,14 +61,43 @@ def main():
         print("SDK READ-ONLY PREFLIGHT FAILED:",",".join(failures) or "unclassified",flush=True)
         print("DO NOT SEND GEN. RECHECK SDK/RPC CONFIGURATION.",flush=True)
         return 4
-    print("GENLAYER SDK READ-ONLY PREFLIGHT OK - SAFE TO REQUEST TEST FUNDING",flush=True)
+    print("GENLAYER SDK READ-ONLY PREFLIGHT OK",flush=True)
     if "--diagnose-only" in sys.argv:
         print("DIAGNOSTIC COMPLETE. NO TEST WALLET FUNDING REQUESTED.",flush=True)
         return 0
+    # Default: reuse the first successful GenVM deployment, not another
+    # expensive deploy. A new signing wallet is requested ONLY once the
+    # prior contract's exact source and FINALIZED result are verified.
+    reuse="--force-new-deploy" not in sys.argv
+    if reuse:
+        print("CHECKING EXISTING BRADBURY DEPLOYMENT FINALITY BEFORE FUNDING...",flush=True)
+        read_env=os.environ.copy()
+        read_env["ACCOUNT_PRIVATE_KEY_1"]=buyer.key.hex()
+        read_env["ACCOUNT_PRIVATE_KEY_2"]=seller.key.hex()
+        existing_cmd=[str(cli),"tests/test_phase7_bradbury_reuse_readonly.py","-q","-s",
+                      "--network","testnet_bradbury","--rpc-url",URL]
+        try:
+            prior=subprocess.run(existing_cmd,env=read_env,capture_output=True,
+                                 text=True,errors="replace",timeout=240)
+        except subprocess.TimeoutExpired:
+            print("EXISTING DEPLOY FINALITY CHECK TIMED OUT. DO NOT SEND GEN.",flush=True)
+            return 4
+        finally:
+            read_env.pop("ACCOUNT_PRIVATE_KEY_1",None)
+            read_env.pop("ACCOUNT_PRIVATE_KEY_2",None)
+        for line in (prior.stdout or "").splitlines():
+            line=line.strip()
+            if line.startswith("SE7_PUBLIC_EXISTING_DEPLOY_FINALIZED_AND_SOURCE_ATTESTED"):
+                print(line[:250],flush=True)
+        if prior.returncode:
+            print("EXISTING DEPLOYMENT NOT VERIFIED FINALIZED. NO NEW GEN REQUESTED.",flush=True)
+            print("Wait for Bradbury finalization; do not redeploy blindly.",flush=True)
+            return 4
+        print("EXISTING DEPLOY VERIFIED. SKIPPING DUPLICATE DEPLOY.",flush=True)
     expires=datetime.datetime.now(datetime.timezone.utc)+datetime.timedelta(seconds=END_AFTER)
     print("SEND ONLY BRADBURY TEST GEN TO THIS NEW ADDRESS:",flush=True)
     print(buyer.address,flush=True)
-    print("Suggested: 5 TEST GEN. Script starts once >=2 TEST GEN is received.",flush=True)
+    print("Suggested: 2 TEST GEN for the existing contract. Script starts once >=2 TEST GEN is received.",flush=True)
     print("KEEP THIS WINDOW OPEN. SESSION EXPIRES UTC:",expires.isoformat(),flush=True)
     print("Never send GEN after the process exits; the keys are not stored.",flush=True)
     last=None
@@ -90,6 +119,8 @@ def main():
     env=os.environ.copy()
     env["ACCOUNT_PRIVATE_KEY_1"]=buyer.key.hex()
     env["ACCOUNT_PRIVATE_KEY_2"]=seller.key.hex()
+    if reuse:
+        env["SE7_USE_FINALIZED_EXISTING"]="1"
     binary=Path(sys.executable).parent/("gltest.exe" if os.name=="nt" else "gltest")
     args=[str(binary),"tests/test_phase7_bradbury_external.py","-v","-s",
           "--network","testnet_bradbury","--rpc-url",URL]
