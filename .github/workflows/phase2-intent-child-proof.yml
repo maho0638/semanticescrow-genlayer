@@ -63,6 +63,6 @@ jobs:
           python -m pytest -q --maxfail=1 tests/test_phase2_contract.py tests/test_phase4_payment.py tests/test_phase5_disputes.py tests/test_phase6_adversarial.py tests/test_phase7_intents.py
           python -m pytest -q tests/test_phase7_legacy_receipts.py
           python -m pytest -q tests/test_phase7_legacy_compat.py tests/test_phase7_schema_compat.py tests/test_phase7_deploy_preflight.py tests/test_phase7_legacy_sdk_path.py tests/test_phase7_rpc_diagnostics.py tests/test_phase7_evm_receipt.py tests/test_phase7_windows_relay.py tests/test_phase7_external_safety_order.py tests/test_phase7_existing_bradbury.py
-          python -m pytest -q tests/test_phase8_release_gate.py tests/test_phase8_ghost_public_probe.py tests/test_phase9_release_packet.py tests/test_child_delivery_recovery_guard.py
+          python -m pytest -q tests/test_phase8_release_gate.py tests/test_phase8_ghost_public_probe.py tests/test_phase9_release_packet.py tests/test_child_delivery_recovery_guard.py tests/test_child_delivery_incident_cli.py tests/test_phase2_intent_child_correlator.py
           python -m pip check
 
