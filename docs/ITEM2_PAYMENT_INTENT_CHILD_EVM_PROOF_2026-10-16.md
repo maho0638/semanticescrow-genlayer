@@ -102,3 +102,26 @@ yeniden gönderimi, gerçek deploy yapılmadı.
 Yeni kaynak kodu **yalnız salt-okunur/çevrimdışı** bir doğrulama
 korumasıdır; üretime çıkış izni, sahte `paid` etiketi veya
 geri alma/çift ödeme izni vermez.
+
+## Son test kanıtı — 2026-10-16
+
+[GitHub Actions 469/469 PASS](https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38954336793).
+
+- 1 eski web API + 153 Direct Mode + 12 v0.6 receipt +
+  83 SDK/güvenlik + **220 bağımsız transfer/denetim regresyonu**.
+- Bu son grup daha önce 158 idi; **62 ek test** yeni
+  payment-intent, GenLayer child/EVM Ghost ayrımı, unsupported public
+  RPC ve replay/false-credit kontrolleridir.
+- Gerçek v0.2.16 kaynak SHA pin, Python derleme, GenVM lint
+  ve `pip check` de başarılı. Bu testler yeni imzalı
+  Bradbury ödemeleri değildir.
+- İlk yeni test çalışmaları ayrıca hatalı `0xa` RPC
+  tutar biçimi şartını yakaladı ve ondan sonra düzeltilerek
+  bütün paket tekrar çalıştırıldı. Başarısız deneme
+  `38953870080` kayıtta kalıyor.
+
+**Sonuç:** Delilleri toplama/ayıklama ve yanlış
+`PAYMENT_DELIVERED` beyanını engelleyen teknik iş
+tamamlandı; **her canlı intent için onchain teslimin kesin
+kanıtlanması HENÜZ tamamlanmadı**. Kimlik zinciri bu
+v0.2.16 dağıtımında kanıtlanmış değildir.
