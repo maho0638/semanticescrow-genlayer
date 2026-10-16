@@ -140,5 +140,37 @@ https://docs.genlayer.com/developers/intelligent-contracts/features/value-transf
 https://docs.genlayer.com/developers/intelligent-contracts/features/interacting-with-evm-contracts
 https://docs.genlayer.com/api-references/genlayer-node
 
-GitHub commit SHA and final CI completion must be recorded **only after
-successful verification**, not guessed or pre-approved.
+## Final verified test evidence (16 October 2026)
+
+The latest complete GitHub Actions workflow:
+https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38959318830
+
+**534/534 tests passed (completed/success)**:
+- 1 legacy API + 153 original Direct Mode + 12 legacy receipt +
+  83 SDK safety + 220 payment/incident correlation regression;
+- 52 new Solidity EVM + intent-bound receipt tests;
+- 13 actual pinned GenVM v0.2.16 constructor/permission and
+  method-dispatch adapter tests (2 new Direct Mode + 11 SDK adapter tests).
+
+The EVM tests use an actual in-memory EVM execution backend and
+compile Solidity 0.8.24 bytecode. Old IC source SHA, compilation,
+pinned GenVM lint and pip dependency check also passed. The
+v2 GenVM Direct Mode uses v0.2.16 official SDK source emulation;
+it does NOT include a real EVM Ghost implementation.
+
+Earlier candidate CI runs found and corrected: wrong Web3 HexBytes hash
+format, non-checksummed address input for historical RPC reads,
+missing transaction receipt rejection, and **v0.2.16
+EVM contract-interface parameters requiring positional-only (/)
+annotations**. The final passing run above supersedes these failures.
+
+### Operational status / release boundary
+
+**The source/code-level v2 fix and local cross-layer verification
+engine are complete, not the Bradbury deployment.** New v2 Ghost and
+EVM router must actually be deployed and one test GEN payout finalized
+before signing off an *end-to-end live* Item 2. No new test wallet,
+testnet GEN transaction, contract/gas expenditure, PR, merge,
+Portal redeployment or Vercel deployment was performed. The ongoing
+Phase-7 original Windows test remains untouched.
+
