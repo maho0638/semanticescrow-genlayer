@@ -1,0 +1,24 @@
+name: SemanticEscrow Phase7 paid deal transaction postmortem
+on:
+  push:
+    branches: [test/phase7-bradbury-runtime-compat-20261015]
+    paths:
+      - 'tools/phase7_create_deal_postmortem.py'
+      - '.github/workflows/phase7-create-deal-postmortem.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-broadcast:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check web3==7.14.0 requests==2.32.5
+      - name: Read-only chain status of paid deal
+        run: python tools/phase7_create_deal_postmortem.py
