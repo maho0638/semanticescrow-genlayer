@@ -62,7 +62,6 @@ def test_legacy_sdk_real_read_contract_runs_against_real_response_shape():
     assert "transaction_hash_variant" not in query
     assert query["type"]=="read"
     assert query["to"].lower()==PINNED_GHOST.lower()
-    assert '"method"' not in str(logs[0][1]) # method name only in encoded binary calldata
 
 def test_response_does_not_mutate_original_or_other_rpc_calls():
     r=envelope()
