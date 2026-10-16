@@ -68,7 +68,18 @@ def main():
     all_data=decode([collapse_if_tuple(x) for x in abi],bytes.fromhex(res[2:]))[0]
     calldata=all_data[16]
     print("SE7_EXACT_CALLDATA_BYTES",len(calldata),"SHA256",hashlib.sha256(calldata).hexdigest(),flush=True)
-    obj=cd_decode(calldata)
+    print("SE7_EXACT_CALLDATA_PREFIX",calldata[:12].hex(),flush=True)
+    obj=None
+    for offset in range(0,8):
+        try:
+            candidate=cd_decode(calldata[offset:])
+            print("SE7_EXACT_CALLDATA_DECODE_OFFSET",offset,flush=True)
+            obj=candidate
+            break
+        except (ValueError,UnicodeError):pass
+    if obj is None:
+        print("SE7_EXACT_CALLDATA_ENCODING_UNRECOGNIZED",flush=True)
+        return 2
     print("SE7_EXACT_CALLDATA_TYPE",type(obj).__name__,flush=True)
     if isinstance(obj,dict):
         print("SE7_EXACT_CALLDATA_FIELDS",sorted(obj),flush=True)
