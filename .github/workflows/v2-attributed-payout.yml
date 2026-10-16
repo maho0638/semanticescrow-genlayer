@@ -76,5 +76,7 @@ jobs:
           python -m pip check
       - name: Actually execute replay-safe Solidity payout and invalid-recipient cases
         run: |
+          export ACCOUNT_PRIVATE_KEY_1="$(python -c 'from eth_account import Account;print(Account.create().key.hex())')"
+          export ACCOUNT_PRIVATE_KEY_2="$(python -c 'from eth_account import Account;print(Account.create().key.hex())')"
           python -m pytest -q --maxfail=1 tests/test_v2_ic_router_source.py tests/test_v2_evm_payout_router.py
           echo SE_V2_EVM_ATOMIC_IDEMPOTENT_PAYMENT_TESTS_PASS
