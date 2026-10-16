@@ -107,5 +107,19 @@ def main():
                     print("SE7_EXACT_MILESTONE_DECODE_FAILURE",type(exc).__name__,flush=True)
                 print("SE7_EXACT_NONCE",args[2],flush=True)
     print("SE7_EXACT_CHAIN_VALUE",int(all_data[20]),flush=True)
+    # Compare the *same exact onchain args* with the installed pinned
+    # genlayer-py 0.19.0rc2 encoder. GenVM v0.2.16 dispatches on "method".
+    from genlayer_py.contracts.utils import make_calldata_object
+    from genlayer_py.abi import calldata as sdk_cd
+    args=obj.get("args") if isinstance(obj,dict) else None
+    if not isinstance(args,list) or len(args)!=3:
+        raise ValueError("unexpected signed argument count")
+    sdk_obj=make_calldata_object(method="create_deal",args=args)
+    sdk_encoding=sdk_cd.encode(sdk_obj)
+    print("SE7_COMPARISON_SDK_WIRE_KEYS",sorted(sdk_obj),flush=True)
+    print("SE7_COMPARISON_ONCHAIN_WIRE_KEYS",sorted(obj),flush=True)
+    print("SE7_COMPARISON_PINNED_SDK_BYTE_IDENTICAL",sdk_encoding==inner,flush=True)
+    print("SE7_COMPARISON_RUNNER_EXPECTS_METHOD_KEY",obj.get("method")=="create_deal",flush=True)
+    print("SE7_COMPARISON_ONCHAIN_EMPTY_KEY_VALUE",obj.get("") if isinstance(obj,dict) else None,flush=True)
     return 0
 if __name__=="__main__":raise SystemExit(main())
