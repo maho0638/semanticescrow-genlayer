@@ -36,3 +36,13 @@ def test_no_unconditional_private_key_logging_or_duplicate_retries():
     assert 'print(BUYER.key' not in src
     assert 'print(SELLER.key' not in src
     assert 'while True:' not in src
+
+def test_full_finality_windows_are_longer_than_bradbury_appeal_window():
+    # 2026-10-16 real deployment was ACCEPTED yet could not finalize until
+    # roughly 30 minutes later. Seven-minute client timeout lost wallet RAM.
+    src=EXTERNAL.read_text(encoding="utf-8")
+    runner=Path("tools/phase7_bradbury_windows.py").read_text(encoding="utf-8")
+    assert src.count("wait_retries=1200")==2
+    assert "for _ in range(1200)" in src
+    assert "timeout=6*60*60" in runner
+    assert "EXISTING DEPLOYMENT NOT VERIFIED FINALIZED. NO NEW GEN REQUESTED." in runner
