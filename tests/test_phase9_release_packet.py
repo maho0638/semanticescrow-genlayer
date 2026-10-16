@@ -29,7 +29,7 @@ def test_real_source_is_exactly_sized_and_v0216_pinned():
     assert fingerprints["source_bytes"]==15738
     assert fingerprints["genvm_version"]=="v0.2.16"
     assert fingerprints["py_genlayer_dependency"]==p.RUNNER_PIN
-    assert len(fingerprints["repository_file_sha256"])==5
+    assert len(fingerprints["repository_file_sha256"])==6
 
 def test_final_handoff_passes_structural_validation_but_never_allows_release():
     packet=signed()
