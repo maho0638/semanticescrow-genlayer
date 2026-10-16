@@ -46,3 +46,12 @@ def test_full_finality_windows_are_longer_than_bradbury_appeal_window():
     assert "for _ in range(1200)" in src
     assert "timeout=6*60*60" in runner
     assert "EXISTING DEPLOYMENT NOT VERIFIED FINALIZED. NO NEW GEN REQUESTED." in runner
+
+def test_known_finalized_genvm_error_blocks_any_new_funding_or_deployment():
+    src=Path("tools/phase7_bradbury_windows.py").read_text(encoding="utf-8")
+    # The halt is AFTER a safe diagnostic and BEFORE the buyer address or
+    # any seller transfer is requested (including --force-new-deploy).
+    assert "SE7_PUBLIC_KNOWN_PAID_CREATE_DEAL_FAILURE_FINALIZED_WITH_ERROR" in src
+    assert src.index("SE7_PUBLIC_KNOWN_PAID_CREATE_DEAL_FAILURE_FINALIZED_WITH_ERROR") < src.index("SEND ONLY BRADBURY TEST GEN TO THIS NEW ADDRESS:")
+    assert "return 5" in src
+    assert "0x1ba86f039ae5b7b6fc7cd6e1b4f8349fb16f3124f6c7e4b9f235d08b83e82c06" in src
