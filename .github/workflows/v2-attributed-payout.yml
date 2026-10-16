@@ -7,6 +7,7 @@ on:
       - 'contracts/evm/SemanticEscrowNativePayoutRouter.sol'
       - 'tests/test_v2_ic_router_source.py'
       - 'tests/test_v2_evm_payout_router.py'
+      - 'tests/test_v2_genvm_direct.py'
       - 'tools/v2_attributed_payout_proof.py'
       - 'tests/test_v2_attributed_payout_proof.py'
       - '.github/workflows/v2-attributed-payout.yml'
@@ -82,3 +83,10 @@ jobs:
           export ACCOUNT_PRIVATE_KEY_2="$(python -c 'from eth_account import Account;print(Account.create().key.hex())')"
           python -m pytest -q --maxfail=1 tests/test_v2_ic_router_source.py tests/test_v2_evm_payout_router.py tests/test_v2_attributed_payout_proof.py
           echo SE_V2_EVM_ATOMIC_IDEMPOTENT_PAYMENT_TESTS_PASS
+
+      - name: Execute actual pinned GenVM v2 constructor and deposit safety gate
+        run: |
+          export ACCOUNT_PRIVATE_KEY_1="$(python -c 'from eth_account import Account;print(Account.create().key.hex())')"
+          export ACCOUNT_PRIVATE_KEY_2="$(python -c 'from eth_account import Account;print(Account.create().key.hex())')"
+          python -m pytest -q --maxfail=1 tests/test_v2_genvm_direct.py
+          echo SE_V2_PINNED_GENVM_DEPOSIT_GATE_PASS
