@@ -2,7 +2,7 @@
 from pathlib import Path
 import sys
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"tools"))
-from gltest import get_gl_client,get_contract_factory
+from gltest import get_gl_client,get_contract_factory,get_default_account
 from phase7_legacy_compat import require_legacy_bradbury
 from phase7_schema_compat import bind_verified_schema
 from phase7_existing_bradbury import verify_existing_finalized_deployment
@@ -20,7 +20,7 @@ def test_existing_bradbury_deployment_is_reusable():
     install_bradbury_finalized_read_adapter(client)
     # Zero-GEN proof that the very SDK path which failed at live step 98
     # can actually read the finalized contract state before any funding.
-    reader=factory.build_contract(contract_address=ghost,account=client.local_account)
+    reader=factory.build_contract(contract_address=ghost,account=get_default_account())
     n=int(reader.deal_count().call())
     assert n>=0
     if n:
