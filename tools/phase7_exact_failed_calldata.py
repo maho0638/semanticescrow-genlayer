@@ -69,17 +69,18 @@ def main():
     calldata=all_data[16]
     print("SE7_EXACT_CALLDATA_BYTES",len(calldata),"SHA256",hashlib.sha256(calldata).hexdigest(),flush=True)
     print("SE7_EXACT_CALLDATA_PREFIX",calldata[:12].hex(),flush=True)
-    obj=None
-    for offset in range(0,8):
-        try:
-            candidate=cd_decode(calldata[offset:])
-            print("SE7_EXACT_CALLDATA_DECODE_OFFSET",offset,flush=True)
-            obj=candidate
-            break
-        except (ValueError,UnicodeError):pass
-    if obj is None:
-        print("SE7_EXACT_CALLDATA_ENCODING_UNRECOGNIZED",flush=True)
-        return 2
+    # Bradbury v0.6 consensus wraps GenVM calldata bytes in RLP:
+    # f9 01 28 (RLP list of 296 bytes) + b9 01 24 (292-byte string)
+    # + 292 GenVM calldata bytes + empty second list element.
+    # Require exact length to avoid silently interpreting arbitrary offsets.
+    from rlp import decode as rlp_decode
+    envelope=rlp_decode(calldata)
+    if not isinstance(envelope,list) or len(envelope)!=2:
+        raise ValueError("unexpected legacy calldata RLP layout")
+    inner=envelope[0]
+    print("SE7_EXACT_RLP_INNER_BYTES",len(inner),"SECOND_ELEMENT_BYTES",len(envelope[1]),flush=True)
+    obj=cd_decode(inner)
+    print("SE7_EXACT_CALLDATA_DECODE_OFFSET","RLP_INNER",flush=True)
     print("SE7_EXACT_CALLDATA_TYPE",type(obj).__name__,flush=True)
     if isinstance(obj,dict):
         print("SE7_EXACT_CALLDATA_FIELDS",sorted(obj),flush=True)
