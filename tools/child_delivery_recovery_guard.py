@@ -151,7 +151,7 @@ class ChildIncidentJournal:
                 if existing and existing!=(digest,raw):
                     raise EvidenceRejected("conflicting immutable child intent snapshot")
                 if not existing:
-                    self.db.execute("INSERT INTO intents VALUES(?,?,?,?,?,?)",
+                    self.db.execute("INSERT INTO intents VALUES(?,?,?,?,?,?,?)",
                                     (ident,digest,raw,chain_id,ghost,parent_tx.lower(),STATUS))
                 self._append(ident,"QUEUED",digest)
             return report
