@@ -69,9 +69,18 @@ def verify_attributed_native_gen(
     require(type(parent) is dict,"GenLayer parent unavailable")
     require(txid(parent.get("id"))==parent_id,"wrong parent ID")
     require(address(parent.get("recipient"))==ghost,"wrong parent recipient")
-    require(parent.get("status_name")=="FINALIZED" and
-            parent.get("tx_execution_result_name")=="FINISHED_WITH_RETURN",
+    # Official GenLayer node receipt uses camelCase statusName /
+    # txExecutionResultName; the verified old Bradbury decoder exposes
+    # snake_case status_name / tx_execution_result_name instead.
+    status=parent.get("statusName",parent.get("status_name"))
+    execution=parent.get("txExecutionResultName",parent.get("tx_execution_result_name"))
+    require(status in ("FINALIZED","Finalized") and
+            execution in ("FINISHED_WITH_RETURN","FinishedWithReturn"),
             "parent not finalized with successful GenVM result")
+    if "status" in parent:
+        require(parent["status"]==7,"consensus numeric parent status differs")
+    if "txExecutionResult" in parent:
+        require(parent["txExecutionResult"]==1,"consensus numeric execution failed")
     messages=parent.get("messages")
     require(type(messages) is list and len(messages)<=128,"no authenticated parent messages")
     calldata=router.encode_abi("disburse",args=[
