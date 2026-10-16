@@ -56,7 +56,8 @@ def _message(msg):
     require(type(msg) is dict,"unexpected GenLayer message type")
     require(set(msg)=={"messageType","recipient","value","data","onAcceptance","saltNonce"},
             "unexpected GenLayer message format")
-    require(type(msg["messageType"]) is int and 0<=msg["messageType"]<=255,"bad protocol message type")
+    require(type(msg["messageType"]) is int and msg["messageType"] in (0,1),
+            "unsupported GenLayer message type")
     require(type(msg["onAcceptance"]) is bool,"invalid emission phase")
     require(type(msg["data"]) is str and msg["data"].startswith("0x"),"bad call data")
     require(type(msg["saltNonce"]) in (str,int),"bad salt nonce")
@@ -99,7 +100,11 @@ def correlate_payment(*,chain_id,ghost,parent_tx,parent,ledger,rows,
     matching=[]
     for pos,m in enumerate(messages):
         recipient,value=_message(m)
+        # Published genlayer-js/src/types/transactions.ts:
+        # enum MessageType { External=0, Internal=1 }. EOA native payments
+        # MUST NOT be correlated from IC→IC child messages.
         if recipient==address(intent["recipient"]) and value==wei(intent["amount_wei"]):
+            require(m["messageType"]==0,"matching message is INTERNAL, not a Ghost EVM transfer")
             require(m["onAcceptance"] is False,
                     "external value must be emitted only on finalized")
             # A transfer-to-EOA must carry no EVM function calldata; otherwise
