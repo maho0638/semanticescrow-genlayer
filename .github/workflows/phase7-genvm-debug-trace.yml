@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/phase7-genvm-debug-trace.yml'
       - 'tools/phase7_genvm_debug_trace.py'
+      - 'tools/phase7_exact_failed_calldata.py'
   workflow_dispatch:
 permissions:
   contents: read
@@ -21,3 +22,7 @@ jobs:
           python-version: '3.12'
       - name: Public GenVM trace (no wallet, no submission)
         run: python tools/phase7_genvm_debug_trace.py
+      - name: Inspect v0.6 immutable calldata without replay
+        run: |
+          python -m pip install --disable-pip-version-check eth-abi==5.2.0 eth-utils==5.3.0 requests==2.32.5
+          python tools/phase7_exact_failed_calldata.py
