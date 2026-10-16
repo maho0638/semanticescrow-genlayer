@@ -19,7 +19,8 @@ for name in ("gltest","genlayer_py"):
         needles=("def deploy_contract_tx(","def _deploy_contract","def wait_for_transaction_receipt(",
                  "def get_transaction(","def deploy_contract(","def _submit_transaction(",
                  "def _send_transaction(","def extract_transaction_id(",
-                 "def extract_contract_address(")
+                 "def extract_contract_address(","def wait_for_finalization(",
+                 "def wait_for_decision(","def _wait_for_","def _simplify_transaction_receipt(")
         matches=[i for i,line in enumerate(lines) if any(n in line for n in needles)]
         for i in matches:
             start=max(0,i-6)
