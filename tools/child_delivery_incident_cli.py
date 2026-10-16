@@ -4,6 +4,7 @@ Inputs MUST be exported from separately independently verified public contract
 read-only getters; a JSON file alone is not authenticated chain data.
 """
 import argparse
+import sqlite3
 import json
 import sys
 from pathlib import Path
@@ -54,5 +55,4 @@ def main(argv=None):
         return 2
 
 if __name__=="__main__":
-    import sqlite3
     sys.exit(main())
