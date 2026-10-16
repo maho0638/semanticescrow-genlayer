@@ -12,7 +12,7 @@ PARENT="0x"+"ee"*32
 CHILD="0x"+"ff"*32
 
 def msg(addr=SELLER,amount=10,**changes):
-    v={"messageType":1,"recipient":addr,"value":hex(amount),
+    v={"messageType":0,"recipient":addr,"value":hex(amount),
        "data":"0x","onAcceptance":False,"saltNonce":"0x0"}
     v.update(changes)
     return v
@@ -79,6 +79,7 @@ def test_same_input_digest_is_deterministic():
     {"parent":parent(messages=[msg(value="-1")])},
     {"parent":parent(messages=[msg(messageType=True)])},
     {"parent":parent(messages=[msg(messageType=256)])},
+    {"parent":parent(messages=[msg(messageType=1)])},
     {"parent":parent(messages=[msg(saltNonce=None)])},
     {"parent":parent(messages=[msg(recipient="not address")])},
     {"parent":parent(messages=[msg(foo="bar")])},
