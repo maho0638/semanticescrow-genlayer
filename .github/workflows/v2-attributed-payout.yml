@@ -8,6 +8,8 @@ on:
       - 'tests/test_v2_ic_router_source.py'
       - 'tests/test_v2_evm_payout_router.py'
       - 'tests/test_v2_genvm_direct.py'
+      - 'tools/phase7_legacy_method_dispatch.py'
+      - 'tests/test_phase7_method_dispatch_compat.py'
       - 'tools/v2_attributed_payout_proof.py'
       - 'tests/test_v2_attributed_payout_proof.py'
       - '.github/workflows/v2-attributed-payout.yml'
@@ -88,5 +90,5 @@ jobs:
         run: |
           export ACCOUNT_PRIVATE_KEY_1="$(python -c 'from eth_account import Account;print(Account.create().key.hex())')"
           export ACCOUNT_PRIVATE_KEY_2="$(python -c 'from eth_account import Account;print(Account.create().key.hex())')"
-          python -m pytest -q --maxfail=1 tests/test_v2_genvm_direct.py
+          python -m pytest -q --maxfail=1 tests/test_v2_genvm_direct.py tests/test_phase7_method_dispatch_compat.py
           echo SE_V2_PINNED_GENVM_DEPOSIT_GATE_PASS
