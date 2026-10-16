@@ -1,6 +1,6 @@
 """Local EVM execution tests for exact SHA-bound native-GEN router.
 
-The source-pinned GenLayer IC sends EVM calldata disburse(bytes,address).
+The source-pinned GenLayer IC sends EVM calldata disburse(bytes32,address).
 Deploy this Solidity contract in an in-memory EVM (no Bradbury token spent).
 """
 import json
@@ -9,6 +9,7 @@ from pathlib import Path
 
 import pytest
 from web3 import Web3
+from web3.exceptions import MismatchedABI
 from eth_tester.exceptions import TransactionFailed
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -110,16 +111,19 @@ def test_unauthorized_sender_cannot_pay_or_fake_ghost_receipt(env):
     assert router.functions.delivered(ident).call() is False
     assert not rec.logs
 
-@pytest.mark.parametrize("digest",[
-    b"",bytes.fromhex("11"*31),bytes.fromhex("11"*33),bytes(32)
-])
-def test_malformed_or_zero_commitment_reverted_without_credit(env,digest):
+def test_zero_commitment_reverted_without_credit(env):
     chain,router,ghost,_,recipient=env
     before=chain.eth.get_balance(recipient)
-    rec=execute(chain,router,ghost,digest,recipient,10**9)
+    rec=execute(chain,router,ghost,bytes(32),recipient,10**9)
     assert rec.status==0
     assert chain.eth.get_balance(recipient)==before
     assert len(rec.logs)==0
+
+@pytest.mark.parametrize("digest", [b"",bytes.fromhex("11"*31),bytes.fromhex("11"*33)])
+def test_malformed_commitment_rejected_by_fixed_bytes32_abi(env,digest):
+    chain,router,ghost,_,recipient=env
+    with pytest.raises((ValueError,TypeError,MismatchedABI)):
+        router.functions.disburse(digest,recipient).build_transaction({"from":ghost,"value":1})
 
 @pytest.mark.parametrize("value", [0,1,10**18])
 def test_reject_wrong_recipient_even_when_called_by_ghost(env,value):
@@ -178,6 +182,6 @@ def test_source_dispatch_exactly_one_abi_method_and_indexed_receipt(env):
     methods=[x["name"] for x in router.abi if x.get("type")=="function"]
     assert "disburse" in methods
     disburse=next(x for x in router.abi if x.get("name")=="disburse")
-    assert [i["type"] for i in disburse["inputs"]]==["bytes","address"]
+    assert [i["type"] for i in disburse["inputs"]]==["bytes32","address"]
     evt=next(x for x in router.abi if x.get("name")=="NativeIntentPaid")
     assert [x["indexed"] for x in evt["inputs"]]==[True,True,True,False]

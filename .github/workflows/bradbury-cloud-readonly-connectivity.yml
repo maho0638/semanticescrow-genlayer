@@ -1,0 +1,102 @@
+name: SemanticEscrow Bradbury cloud RPC read-only connectivity
+"on":
+  push:
+    branches:
+      - test/bradbury-actions-readonly-rpc-20261016
+    paths:
+      - .github/workflows/bradbury-cloud-readonly-connectivity.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: se-bradbury-rpc-smoke-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  rpc-readonly:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Official chain-only L2 RPC independent 4221 connection probe (no GEN)
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import urllib.request, urllib.error, json
+          url="https://rpc.testnet-chain.genlayer.com"
+          ghost="0x73dc7ee6f7406b01ef7d607f8d1a48a780afa12a"
+          for method,params in (("eth_chainId",[]),("eth_getBalance",[ghost,"latest"]),("eth_getCode",[ghost,"latest"])):
+              body=json.dumps({"jsonrpc":"2.0","id":1,"method":method,"params":params}).encode()
+              req=urllib.request.Request(url,data=body,headers={"Content-Type":"application/json"},method="POST")
+              try:
+                  with urllib.request.urlopen(req,timeout=15) as r: obj=json.load(r)
+              except urllib.error.HTTPError as ex:
+                  print("GENLAYER_L2_RPC_HTTP_BLOCK",ex.code,method,flush=True)
+                  raise SystemExit(2)
+              except Exception as ex:
+                  print("GENLAYER_L2_RPC_NETWORK_FAILURE",type(ex).__name__,method,flush=True)
+                  raise SystemExit(3)
+              if obj.get("error") or not isinstance(obj.get("result"),str):
+                  print("GENLAYER_L2_RPC_JSON_ERROR",method,flush=True)
+                  raise SystemExit(4)
+              res=obj["result"]
+              if method=="eth_chainId":
+                  assert int(res,16)==4221
+                  print("GENLAYER_L2_CHAIN_ID_PASS_4221",flush=True)
+              elif method=="eth_getBalance":
+                  print("GENLAYER_L2_GHOST_BALANCE_WEI",int(res,16),flush=True)
+              else:
+                  assert len(res)>2
+                  print("GENLAYER_L2_GHOST_BYTECODE_PASS",flush=True)
+          print("GENLAYER_L2_PUBLIC_RPC_ALL_READS_PASSED",flush=True)
+          PY
+      - name: Public Bradbury 4221 RPC network probe - absolutely no wallet
+        continue-on-error: true
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          import urllib.request
+          import urllib.error
+          import sys
+
+          url = "https://rpc-bradbury.genlayer.com"
+          ghost = "0x73dc7ee6f7406b01ef7d607f8d1a48a780afa12a"
+          ALLOWED = {"eth_chainId", "eth_getCode", "eth_getBalance", "eth_blockNumber"}
+          def call(method, params):
+              assert method in ALLOWED
+              wire = json.dumps({"jsonrpc":"2.0","id":1,"method":method,"params":params}).encode()
+              req = urllib.request.Request(url, data=wire,
+                         headers={"Content-Type":"application/json","Accept":"application/json"},
+                         method="POST")
+              try:
+                  with urllib.request.urlopen(req,timeout=15) as reply:
+                      obj=json.load(reply)
+              except urllib.error.HTTPError as exc:
+                  print("BRADBURY_ACTIONS_RPC_HTTP_BLOCK",exc.code,flush=True)
+                  raise SystemExit(3)
+              except Exception as exc:
+                  print("BRADBURY_ACTIONS_RPC_TRANSPORT_FAILURE",type(exc).__name__,flush=True)
+                  raise SystemExit(4)
+              if type(obj) is not dict or obj.get("error"):
+                  print("BRADBURY_ACTIONS_RPC_RESPONSE_ERROR",flush=True)
+                  raise SystemExit(5)
+              return obj.get("result")
+
+          chain = call("eth_chainId",[])
+          if chain!="0x107d": # 4221 decimal
+              print("BRADBURY_ACTIONS_WRONG_CHAIN",str(chain)[:20],flush=True)
+              raise SystemExit(2)
+          print("BRADBURY_ACTIONS_CHAIN_ID_4221_PASS",flush=True)
+          code = call("eth_getCode",[ghost,"latest"])
+          if not isinstance(code,str) or len(code)<=2:
+              print("BRADBURY_ACTIONS_GHOST_BYTECODE_MISSING",flush=True)
+              raise SystemExit(6)
+          print("BRADBURY_ACTIONS_PINNED_GHOST_BYTECODE_PASS",flush=True)
+          balance = call("eth_getBalance",[ghost,"latest"])
+          if not isinstance(balance,str) or not balance.startswith("0x"):
+              print("BRADBURY_ACTIONS_GHOST_BALANCE_MALFORMED",flush=True)
+              raise SystemExit(7)
+          print("BRADBURY_ACTIONS_GHOST_BALANCE_WEI",int(balance,16),flush=True)
+          block = call("eth_blockNumber",[])
+          print("BRADBURY_ACTIONS_BLOCK_NUMBER",int(block,16),flush=True)
+          print("BRADBURY_ACTIONS_CLOUD_READ_ONLY_RPC_SUCCESS",flush=True)
+          PY

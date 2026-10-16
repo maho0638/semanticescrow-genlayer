@@ -65,6 +65,21 @@ def main():
     if "--diagnose-only" in sys.argv:
         print("DIAGNOSTIC COMPLETE. NO TEST WALLET FUNDING REQUESTED.",flush=True)
         return 0
+    # The v0.19rc2 SDK previously sent {"": "create_deal"} while the
+    # official GenVM v0.2.16 runner expects {"method": "create_deal"}.
+    # Perform a zero-GEN pre-funding gate; the live integration test also
+    # installs this exact adapter before any signed write.
+    from phase7_legacy_method_dispatch import canonical_v0216_calldata
+    from genlayer_py.contracts.utils import make_calldata_object
+    old=make_calldata_object(method="create_deal",args=["seller","terms","nonce"])
+    fixed=canonical_v0216_calldata("create_deal",["seller","terms","nonce"])
+    if old.get("")!="create_deal" or fixed.get("method")!="create_deal" or "" in fixed:
+        print("METHOD DISPATCH NOT VERIFIED. NO GEN FUNDING REQUESTED.",flush=True)
+        return 5
+    if "--force-new-deploy" in sys.argv:
+        print("NO NEW DEPLOYMENT: must reuse finalized pinned contract.",flush=True)
+        return 5
+    print("SE7_PUBLIC_CANONICAL_V0216_DISPATCH_PREFUNDING_PASS",flush=True)
     # Default: reuse the first successful GenVM deployment, not another
     # expensive deploy. A new signing wallet is requested ONLY once the
     # prior contract's exact source and FINALIZED result are verified.

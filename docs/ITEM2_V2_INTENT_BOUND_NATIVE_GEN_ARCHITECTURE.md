@@ -34,11 +34,11 @@ Branch `feature/intent-bound-gen-payout-v2-20261016`.
 - On settlement it computes the **exact** existing SHA-256 transfer
   intent from frozen `terms_digest_sha256,deal_id,milestone_index,kind,
   recipient,amount_wei`, and emits an external EVM message:
-  `router.disburse(bytes.fromhex(intentId),Address(recipient))`,
+  `router.disburse(bytes32(bytes.fromhex(intentId)),Address(recipient))`,
   `value=u256(amount)`, on protocol finalization.
 - `contracts/evm/SemanticEscrowNativePayoutRouter.sol` is a new
   Solidity 0.8.24 contract constructor-bound to the specific approved
-  Ghost and chain. Its `disburse(bytes,address)` accepts **only**
+  Ghost and chain. Its `disburse(bytes32,address)` accepts **only**
   authenticated Ghost calls, validates exact 32-byte intent bytes,
   blocks the zero address and malformed/zero-value payments, marks
   `delivered[bytes32(intentId)]` before any external call, reverts

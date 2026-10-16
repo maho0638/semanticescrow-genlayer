@@ -15,6 +15,8 @@ from phase7_deploy_preflight import preview_deploy,install_deploy_gas_headroom
 from phase7_rpc_diagnostics import install_rpc_diagnostics
 from phase7_legacy_receipts import install_legacy_bradbury_reader, is_finalized_success, read_bradbury_transaction
 from phase7_existing_bradbury import verify_existing_finalized_deployment, GENLAYER_TX
+from phase7_legacy_method_dispatch import install_bradbury_v0216_dispatch
+from phase7_bradbury_read_envelope import install_bradbury_finalized_read_adapter
 BUYER=Account.from_key(os.environ["ACCOUNT_PRIVATE_KEY_1"])
 SELLER=Account.from_key(os.environ["ACCOUNT_PRIVATE_KEY_2"])
 VALUE=10**14
@@ -38,6 +40,12 @@ def test_bradbury_real_ghost_refund():
     print("SE7_PUBLIC_LEGACY_PROTOCOL_GATE_BEGIN", flush=True)
     fees=require_legacy_bradbury(c)
     assert fees is None
+    # Real 2026-10-16 Bradbury failure: SDK encoded {"":"create_deal"}
+    # but verified GenVM v0.2.16 runner resolves cd["method"].
+    # Correct the SDK EVM call adapter before the FIRST signed action.
+    sdk_patch=install_bradbury_v0216_dispatch(c)
+    assert sdk_patch["method"]=="create_deal"
+    print("SE7_PUBLIC_V0216_METHOD_DISPATCH_PATCH_PASS",flush=True)
     print("SE7_PUBLIC_LEGACY_PROTOCOL_GATE_PASS", flush=True)
     buyer=get_default_account()
     seller=next(a for a in get_accounts() if a.address.lower()==SELLER.address.lower())
@@ -60,7 +68,9 @@ def test_bradbury_real_ghost_refund():
     install_rpc_diagnostics(c)
     # get_gl_client() is lru_cached and is reused inside ContractFactory.
     install_legacy_bradbury_reader(c)
+    install_bradbury_finalized_read_adapter(c)
     print("SE7_PUBLIC_LEGACY_RECEIPT_READER_READY",flush=True)
+    print("SE7_PUBLIC_V06_FINALIZED_READ_ADAPTER_READY",flush=True)
     if reuse:
         d=read_bradbury_transaction(c,GENLAYER_TX)
         ok(d,"DEPLOY_EXISTING")

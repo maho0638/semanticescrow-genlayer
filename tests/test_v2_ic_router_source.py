@@ -36,7 +36,7 @@ def test_candidate_is_independently_parseable_gemvm_v0216_source():
 def test_emission_carries_exact_sha256_intent_bytes_not_amount_only():
     source=code()
     assert "ident=l({Ai:'SemanticEscrow.transfer-intent.v1'" in source
-    assert "_NativeIntentRouter(self.payment_router).emit(value=u256(D)).disburse(bytes.fromhex(ident),Address(recipient))" in source
+    assert "_NativeIntentRouter(self.payment_router).emit(value=u256(D)).disburse(bytes32(bytes.fromhex(ident)),Address(recipient))" in source
     assert "Au(Address(recipient)).emit_transfer" not in source
     assert "self.router_ready" in source
 
@@ -52,8 +52,8 @@ def test_locked_router_configuration_before_accepting_deposit():
 def test_contract_and_router_interface_types_are_identical():
     source=code()
     sol=SOL.read_text()
-    assert "def disburse(self,intent_id:bytes,recipient:Address,/)->None" in source
-    assert "function disburse(bytes calldata intentBytes, address payable recipient)" in sol
+    assert "def disburse(self,intent_id:bytes32,recipient:Address,/)->None" in source
+    assert "function disburse(bytes32 intentId, address payable recipient)" in sol
     assert "event NativeIntentPaid(" in sol
     assert "delivered[intentId] = true;" in sol
     assert "if (!ok) revert TransferFailed();" in sol

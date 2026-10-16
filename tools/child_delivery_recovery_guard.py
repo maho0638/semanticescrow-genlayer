@@ -160,12 +160,32 @@ class ChildIncidentJournal:
     def _fetch(self,ident):
         require(type(ident) is str and len(ident)==64 and
                 all(c in "0123456789abcdef" for c in ident),"bad intent id")
-        row=self.db.execute("SELECT snapshot_json,state FROM intents WHERE intent_id=?",
+        row=self.db.execute("SELECT snapshot_hash,snapshot_json,chain_id,ghost,parent_tx,state FROM intents WHERE intent_id=?",
                             (ident,)).fetchone()
         require(row is not None,"unregistered intent: no transfer classification")
-        require(row[1]==STATUS,"unexpected incident status")
-        data=json.loads(row[0])
-        require(data["intent"]["intent_id_sha256"]==ident,"snapshot altered")
+        snapshot_hash,raw,chain_id,ghost,parent_tx,state=row
+        require(state==STATUS,"unexpected incident status")
+        try:
+            data=json.loads(raw)
+            canonical_raw=canonical(data).decode("ascii")
+        except (ValueError,TypeError,UnicodeError) as exc:
+            raise EvidenceRejected("corrupt immutable intent snapshot") from exc
+        require(raw==canonical_raw and _sha(raw.encode("ascii"))==snapshot_hash,
+                "tampered immutable intent snapshot")
+        require(type(data) is dict and set(data)=={"schema","chain_id","ghost","parent_tx","intent"},
+                "invalid immutable intent snapshot schema")
+        require(data["schema"]==SCHEMA and data["chain_id"]==chain_id==4221,
+                "intent snapshot chain/schema mismatch")
+        require(address(data["ghost"])==ghost and data["parent_tx"]==parent_tx,
+                "intent snapshot journal columns mismatch")
+        require(type(data["intent"]) is dict and
+                data["intent"].get("intent_id_sha256")==ident,
+                "snapshot intent id mismatch")
+        queued=self.db.execute(
+            "SELECT evidence_digest FROM events WHERE intent_id=? AND event='QUEUED'",
+            (ident,)).fetchall()
+        require(len(queued)==1 and queued[0][0]==snapshot_hash,
+                "immutable intent is not bound to its queued journal event")
         return data
 
     def report_child_failure(self,ident,*,child_tx,reporter_notes_digest):
@@ -228,8 +248,13 @@ class ChildIncidentJournal:
 
     def audit(self):
         """Detect accidental corruption of local journal only, NOT remote fraud."""
+        snapshots={}
+        for ident, in self.db.execute("SELECT intent_id FROM intents ORDER BY intent_id"):
+            data=self._fetch(ident)
+            snapshots[ident]=_sha(canonical(data))
         previous="0"*64
         expected_seq=1
+        queued=set()
         for seq,ident,evt,digest,prev,actual in self.db.execute(
                 "SELECT seq,intent_id,event,evidence_digest,previous_hash,event_hash FROM events ORDER BY seq"):
             require(evt in EVENTS,"unknown event in local audit log")
@@ -239,8 +264,13 @@ class ChildIncidentJournal:
             require(self.db.execute("SELECT 1 FROM intents WHERE intent_id=?",
                                     (ident,)).fetchone() is not None,
                     "orphan incident event")
+            if evt=="QUEUED":
+                require(ident not in queued and digest==snapshots.get(ident),
+                        "queued snapshot event does not match immutable intent")
+                queued.add(ident)
             expected_seq+=1
             previous=actual
+        require(queued==set(snapshots),"immutable intent missing its queued journal event")
         return {"events":expected_seq-1,"head_sha256":previous,
                 "local_integrity":True,"chain_attestation":False,
                 "value_recovery_attested":False}

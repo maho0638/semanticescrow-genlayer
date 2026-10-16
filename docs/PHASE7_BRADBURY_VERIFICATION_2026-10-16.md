@@ -79,3 +79,40 @@ Corrections are now on the test branch:
 The real deployment took roughly 30 minutes from ACCEPTED to its earliest reported finalization timestamp, while the older runner waited **only 140 x 3 seconds = 7 minutes**. That timeout was insufficient for a signed onchain transaction, even with a correct reader. The updated test path uses **1,200 x 3 seconds = up to 60 minutes** for each finalization wait. The asynchronous refund EVM beneficiary balance polling also lasts up to 60 minutes; the PowerShell parent holds the ephemeral signing session in RAM for up to 6 hours while the integration test runs. These are read-only polls after each signed action, NOT retries of signed payments. The user must keep the PowerShell process alive; if a timeout occurs, stop and inspect public tx IDs and recipient balances rather than funding a new ephemeral wallet blindly. Do not treat mere passage of an appeal deadline as proof of materialized FINALIZED status.
 
 Additional timeout and funding-order regression: [249 successful tests (1+153+12+83)](https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38878413843). The actual live refund path remains unexecuted/uncertified until another disposable onchain test after original finalization.
+
+## 2026-10-16 REAL payable create_deal FAILED on Bradbury (additional signed 2 TEST GEN session)
+
+After the first v0.2.16 deployment was genuinely `FINALIZED` +
+`FINISHED_WITH_RETURN`, the Windows test reused Ghost
+`0x73dc7ee6f7406b01ef7d607f8d1a48a780afa12a`.
+The temporary buyer `0xa9afeBFEc83cEddcAE9b61a3A22971BF5e426e0C` received 2
+Bradbury **TEST** GEN and submitted one exact payable `create_deal` with
+`100000000000000` wei (0.0001 TEST GEN). No seller gas funding, cancel
+proposal, seller confirmation, or refund was sent.
+
+Evidence:
+- EVM tx: `0xa8ea226dc7cce9dd9265c400198d08673774b4ebdf31f40171ac3e6d491441a4`.
+- Independent GenLayer transaction ID from ConsensusMain event:
+  `0x1ba86f039ae5b7b6fc7cd6e1b4f8349fb16f3124f6c7e4b9f235d08b83e82c06`.
+- EVM receipt: status 1, block `25,305,039`, gas used `1,052,166`, 4 logs, six-input legacy selector `0xe71d5196`. **Not proof of GenVM success.**
+- Legacy ConsensusData `getTransactionData` and `getTransactionAllData` return matching GenLayer ID, correct buyer (origin + sender), correct Ghost recipient, recorded native value `100000000000000` wei, **status 7 FINALIZED but txExecutionResult 2 FINISHED_WITH_ERROR**. The failure is a real GenVM execution failure, not merely the patched SDK receipt reader or a pending appeal.
+- `eqBlocksOutputs`: only 8 bytes in the public record, with no legible error reason. Its digest is `d9c1f8a6a5cc9da94f792987d84d66d4bce31cc4c659b0e339a2a026724dbd9a`. Root cause (old runtime ABI/call-data/value/storage/contract logic or upstream validator failure) is **not yet proven**. Do not invent a specific source-line diagnosis.
+- Most recent read-only buyer `eth_getBalance` returned
+  `1997701684850299000` wei (approximately 1.997701684850299 TEST GEN);
+  nonce 1. The process finished, ephemeral keys were RAM-only, so this
+  remaining wallet balance is **not a recoverable budget**.
+- Read-only chain evidence: [initial paid create receipt and execution](https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38886548880);
+  [independent amount/recipient/result/8-byte outputs confirmation](https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38886787565).
+
+**SAFETY NO-GO:** The Windows funded runner is intentionally blocked
+immediately after safe read-only preflight on the current pinned source, with
+`SE7_PUBLIC_KNOWN_PAID_CREATE_DEAL_FAILURE_FINALIZED_WITH_ERROR` and return 5,
+BEFORE it prints a new fundable ephemeral wallet. `--force-new-deploy` does
+NOT bypass this. No more blind redeploys or paid `create_deal` until the
+actual runtime failure is identified, a new compatible candidate is
+validated in Direct Mode plus full five-validator Studio and given a fresh
+source attestation before a deliberately approved new Bradbury test.
+
+The existing Bradbury-deployed source was **NOT modified**; `main`,
+Phase 8/9 audit branches, and Portal are not involved. Stage 7 remains
+**INCOMPLETE**, real-value release still blocked.

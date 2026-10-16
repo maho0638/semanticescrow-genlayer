@@ -46,3 +46,15 @@ def test_full_finality_windows_are_longer_than_bradbury_appeal_window():
     assert "for _ in range(1200)" in src
     assert "timeout=6*60*60" in runner
     assert "EXISTING DEPLOYMENT NOT VERIFIED FINALIZED. NO NEW GEN REQUESTED." in runner
+
+def test_signed_v0216_dispatch_gate_must_run_before_new_funding():
+    src=Path("tools/phase7_bradbury_windows.py").read_text(encoding="utf-8")
+    live=EXTERNAL.read_text(encoding="utf-8")
+    assert "SE7_PUBLIC_CANONICAL_V0216_DISPATCH_PREFUNDING_PASS" in src
+    assert src.index("SE7_PUBLIC_CANONICAL_V0216_DISPATCH_PREFUNDING_PASS") < src.index("SEND ONLY BRADBURY TEST GEN TO THIS NEW ADDRESS:")
+    assert "if old.get(\"\")!=\"create_deal\"" in src
+    assert 'if "--force-new-deploy" in sys.argv:' in src
+    assert 'NO NEW DEPLOYMENT: must reuse finalized pinned contract.' in src
+    assert "EXISTING DEPLOYMENT NOT VERIFIED FINALIZED. NO NEW GEN REQUESTED." in src
+    assert live.index("install_bradbury_v0216_dispatch(c)") < live.index("fac=get_contract_factory(")
+    assert live.index("install_bradbury_v0216_dispatch(c)") < live.index("ok(send(con.create_deal")

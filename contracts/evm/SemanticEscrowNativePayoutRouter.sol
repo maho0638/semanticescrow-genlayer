@@ -45,24 +45,17 @@ contract SemanticEscrowNativePayoutRouter {
     }
 
     /**
-     * GenVM v0.2.16 EVM interface supports dynamic bytes and Address types.
-     * EVM selector: disburse(bytes,address).
-     * Reject any empty or malformed intent digest.
+     * GenVM v0.2.16 EVM interface uses a fixed bytes32 intent and Address.
+     * EVM selector: disburse(bytes32,address).
      */
-    function disburse(bytes calldata intentBytes, address payable recipient) external payable {
+    function disburse(bytes32 intentId, address payable recipient) external payable {
         if (block.chainid != expectedChainId) revert WrongChain();
         if (msg.sender != escrowGhost) revert UnauthorizedGhost();
-        if (intentBytes.length != 32) revert InvalidIntent();
         if (recipient == address(0) || recipient == address(this) || recipient == escrowGhost) {
             revert InvalidRecipient();
         }
         if (msg.value == 0) revert ZeroValue();
         if (entered != 1) revert ReentrantCall();
-
-        bytes32 intentId;
-        assembly {
-            intentId := calldataload(intentBytes.offset)
-        }
         if (intentId == bytes32(0)) revert InvalidIntent();
         if (delivered[intentId]) revert AlreadyDelivered();
 

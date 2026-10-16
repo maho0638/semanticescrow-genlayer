@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"tools"))
-from child_delivery_recovery_guard import ChildIncidentJournal,RecoveryForbidden,STATUS
+from child_delivery_recovery_guard import ChildIncidentJournal,RecoveryForbidden,STATUS,_sha,canonical
 from phase8_release_gate import EvidenceRejected
 from test_phase8_release_gate import BUYER,SELLER,GHOST,HASH,BLOCK,intent,ledger,evm
 
@@ -208,10 +208,36 @@ def test_detect_casual_local_incident_log_corruption(book):
     with pytest.raises(EvidenceRejected,match="tampered"):
         book.audit()
 
+def test_intent_snapshot_hash_is_verified_on_reads_and_audit(book):
+    enroll(book)
+    ident=item()
+    row=book.db.execute("SELECT snapshot_json FROM intents WHERE intent_id=?",(ident,)).fetchone()
+    mutated=row[0].replace('"amount_wei":"10"','"amount_wei":"11"')
+    book.db.execute("UPDATE intents SET snapshot_json=? WHERE intent_id=?",(mutated,ident))
+    with pytest.raises(EvidenceRejected,match="tampered immutable intent snapshot"):
+        book.decision(ident)
+    with pytest.raises(EvidenceRejected,match="tampered immutable intent snapshot"):
+        book.audit()
+
+def test_rehashed_snapshot_cannot_be_detached_from_original_queue_event(book):
+    enroll(book)
+    ident=item()
+    row=book.db.execute("SELECT snapshot_json FROM intents WHERE intent_id=?",(ident,)).fetchone()
+    import json
+    snapshot=json.loads(row[0])
+    snapshot["intent"]["amount_wei"]="11"
+    raw=canonical(snapshot).decode("ascii")
+    book.db.execute("UPDATE intents SET snapshot_json=?,snapshot_hash=? WHERE intent_id=?",
+                    (raw,_sha(raw.encode("ascii")),ident))
+    with pytest.raises(EvidenceRejected,match="not bound to its queued journal event"):
+        book.decision(ident)
+    with pytest.raises(EvidenceRejected,match="not bound to its queued journal event"):
+        book.audit()
+
 def test_locally_deleted_event_is_detected(book):
     enroll(book)
     book.db.execute("DELETE FROM events WHERE seq=1")
-    with pytest.raises(EvidenceRejected,match="broken"):
+    with pytest.raises(EvidenceRejected,match="not bound to its queued journal event"):
         book.audit()
 
 def test_mixed_refund_and_payout_are_both_independent_unknowns(book):
