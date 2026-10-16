@@ -1,1 +1,41 @@
-YªçŠx-®éÜj×¢ëiºÚ+Š§j[h‘éÜ¢éí×]zN‹Z–‹­¦ëeŠw¬ÔŒA¡…Í”€ÜØÈ…Ì…¹IAÁÉ•Á…É…Ñ¥½¸((¨©AÉ•Á…É•è¨¨€ÈÀÈØ´ÄÀ´ÄØ€€(¨©	É…¹ è¨¨İ½É¬½Í•µ…¹Ñ¥Œµ•ÍÉ½Üµ½µÁ±•Ñ¥½¸´ÈÀÈØÄÀÄİ€€€(¨©	É…‘‰ÕÉäY4‰±½¬ÕÍ•™½ÈÑ¡”ØÈ‘•Á±½äÁÉ•Ù¥•Üè¨¨€ÈÔÌĞÄĞÀÅ€((ŒŒA¥¹¹•M,É•…‘Ì()Q¡”½™™¥¥…°•¹±…å•ÈµÁäôôÀ¸Ää¸ÁÉŒÉ€	É…‘‰ÕÉä±¥•¹Ğ°Ñ¡”‰åÑ”µÁ¥¹¹•)ØÀ¸È¸ÄØµ•Ñ¡½µ‘¥ÍÁ…Ñ …‘…ÁÑ•È°…¹Ñ¡”™¥¹…±¥é••¹}…±±€•¹Ù•±½Á”…‘…ÁÑ•È)ÍÕ•ÍÍ™Õ±±äÉ•…Ñ¡”‘•Á±½å•¡½ÍĞ€ÁàÜÍ‘Œİ•”Ù˜ÜĞÀÙˆÀÅ•˜İØÀİ˜áÅ„Ğá„ÜàÁ…™„ÄÉ…€¸)Q¡”±¥Ù”…±±Ìİ•É”‘•…±}½Õ¹Ñ€°•Ñ}±•‘•È À¥€°•Ñ}‘•…° À¥€°…¹)•Ñ}ÑÉ…¹Í™•É}¥¹Ñ•¹ÑÌ À¥€¸I•ÍÕ±ÑÌ‘•½‘•…Ì¥¹Ñ€°‘¥Ñ€°‘¥Ñ€°…¹)±¥ÍÑ€°É•ÍÁ•Ñ¥Ù•±ä¸Q¡”Íµ½­”½µµ…¹ÁÉ¥¹ÑÌ½¹±ä…¹½¹¥…°É•ÍÕ±Ğ¡…Í¡•Ì¸()Q¡¥ÌÉÕ¸ÁÉ½Ù•ÌÑ¡”•¹1…å•ÈIA…¹Á¥¹¹•M,É•…Á…Ñ …É”ÕÍ…‰±”™É½´Ñ¡”)ÕÉÉ•¹Ğ•á•ÕÑ¥½¸•¹Ù¥É½¹µ•¹Ğ¸¥Ñ!Õˆµ¡½ÍÑ•ÉÕ¹¹•ÉÌ¡…Ù”¡¥ÍÑ½É¥…±±ä)É••¥Ù•±½Õ‘™±…É”€ĞÀÌ¡…±±•¹•Ì™É½´Ñ¡”•¹1…å•ÈIAìÑ¡…ĞÉ•µ…¥¹Ì„)ÉÕ¹¹•Èµ¹•Ñİ½É¬±¥µ¥Ñ…Ñ¥½¸¸Y4µ½¹±äÉ•…‘Ì…¹…Ì•ÍÑ¥µ…Ñ•ÌÕÍ”Ñ¡”Í•Á…É…Ñ”)½™™¥¥…°	É…‘‰ÕÉä¡…¥¸IA¸9¼ÁÉ½áä½È¡…±±•¹”‰åÁ…ÍÌ¥ÌÕÍ•¸((ŒŒU¹Í¥¹•…ÌÍ¥µÕ±…Ñ¥½¹Ì()Q¡”ØÈ%Í½ÕÉ”İ…Ì‰•¡…Ù¥½ÈµÁÉ•Í•ÉÙ¥¹±äµ¥¹¥™¥•İ¡¥±”É•Ñ…¥¹¥¹œ…±°€Äà)ÁÕ‰±¥Œµ•Ñ¡½‘Ì°Ñ¡•¥È…ÉÕµ•¹ĞÑåÁ•Ì°Ù…±¥‘…Ñ¥½¸…¹Í•ÑÑ±•µ•¹ĞÁ…Ñ¡Ì°…¹Ñ¡”)É½ÕÑ•È…ÕÑ¡½É¥é…Ñ¥½¸…¹Á…åµ•¹Ğ¡•­Ì¸MÑ½É…”…¹¹½Ñ…Ñ¥½¹Ìİ•É”Ù•É¥™¥•)……¥¹ÍĞÑ¡”Í¡½ÉÑ•¹•ÍÑ…Ñ”µ™¥•±¹…µ•Ì¸M½ÕÉ”M!´ÈÔØè)…‰”ÄÀÜÀá˜ÔÙ˜Øá˜Ìàå„ĞĞÀÌÈÄÄÈÉŒĞÍ„àÜÔÌàÔÍ”ÔäÕ„Í•‰ÌÌİ™ŒÈääÜá™ŒØÅ€( ÄØ°ØàÄ‰åÑ•Ì¤¸()=¸	É…‘‰ÕÉä‰±½¬€ÈÔÌĞÄÈĞÍ€°…¸Õ¹Í¥¹•‘•Á±½åµ•¹ĞÍ¥µÕ±…Ñ¥½¸µ•…ÍÕË]z¶‰ËkºwµçF6V–Æ–ærÂæB6†V6·2F†RFFVB6–×VÆF–öâv—F‚WF…ö6ÆÆâF†RUdĞ¥%2&WGW&æVBÒ&Æö6²v2Æ–Ö—BâF†W6R&RW7F–ÖFW2Âæ÷BG&ç67F–öà§&V6V—G3²Æ—fRv2—26†V6¶VBv–â–ÖÖVF–FVÇ’&Vf÷&R6–væ–ærà ¥Vç6–væVBÆVv7’6öç6Vç7W4Ö–âæFEG&ç67F–öæv2W7F–ÖFW2f÷"F†RÆææV@§w&—FR6ÆÇ2vW&S¢c7&VFUöFVÆÃƒbÃcC“²&÷÷6Uö6æ6VÆƒcrÃcSƒ°¦6öæf—&Õö6æ6VÆƒcrÃcSƒ²c"6öæf–wW&U÷–ÖVçE÷&÷WFW&ƒ“Ã“s°¦7&VFUöFVÆÃƒbÃcC“²7V&Ö—EöWf–FVæ6VÃ3RÃCsS²76W76ƒ#ÃsS²æ@¦6WGFÆVƒ#ÃsSâF†W6R6ÆÇ2vW&R6–×VÆFVBv—F‚F†RW†—7F–ærFWÆ÷–VBv†÷7@¦2F†RVçfVÆ÷R&V6—–VçB&V6W6RF†RæWrc"v†÷7BFöW2æ÷BW†—7B–WBâF†W¦W7F–ÖFRUdÒ&VçBÖVçfVÆ÷Rv2Âæ÷BvVådÒ'VçF–ÖR6ö×ÆWF–öâ÷"6†–ÆBfVW2à ¢22gVæF–ær6Æ7VÆF–öâgFW"&W&F–öà ¤BF†Rö'6W'fVBÖ‚fVRW"v2ÂFFVBW7F–ÖFW2f÷"F†RÆææVBw&—FW2À§&÷WFW"ÂæBöæRgVÆÂc"&VFWÆ÷–ÖVçBF÷FÂ&÷WBã““sRtTæâF†R&WVW7FV@¦ã"tTæ'VFvWBFG2&÷†–ÖFVÇ’#Rv26öçF–ævVæ7’ÂãtTæV°§&–æ6—Âf÷"F†Rc&VgVæB÷c"–÷WBFW7G2ÂæBãRtTæf÷"6†–ÆBæ@¦6÷'&V7F–öâ÷fW&†VBâÆææVB7Æ—C¢ãRtTæFòF†R'W–W"öFWÆ÷–W"FW7@§vÆÆWBæBãRtTæFòF†R6VÆÆW"FW7BvÆÆWBâF†Rc&VgVæB&WGW&ç2—G0¦ãtTæ&–æ6—Â&Vf÷&RF†Rc"FW÷6—BÂ6ò—B—2æ÷B6÷VçFVBGv–6Rà ¤æòÆ—fRG&ç67F–öâv26–væVB÷"6VçBGW&–ærF†W6R&Wf–Ww2âF†RFW7BvÆÆWG0¦×W7B&RæWvÇ’vVæW&FVBöæÇ’gFW"F†—2&W&F–öâæBF†R7F–öç26†V6·3°¦öÆBW†VÖW&ÂFG&W76W2&Ræ÷BgVæF&ÆRà 
+# Phase 7: Bradbury gas and RPC preparation
+
+Status snapshot: 2026-10-17. These are read-only estimates for Bradbury chain ID 4221, not signed or broadcast transactions. The v2 source was pinned at SHA-256 `abe10708f56f68f389a440321122c43a8753853e595a3ebd337cfc29978cfc61` (16,681 bytes).
+
+## Live unsigned gas probe
+
+Observed at EVM block 25,341,401. The estimate request used current fee data, and `eth_call` verified the padded deployment budget. Estimates have at least 10% / 1,000,000 gas headroom and are rejected above the 15,900,000 Bradbury safe ceiling.
+
+| Operation | Estimated gas | Gas cap used | Maximum fee at sampled price |
+| --- | ---: | ---: | ---: |
+| v2 Intelligent Contract deploy | 14,222,029 | 15,644,232 | 0.03307157 GEN |
+| Solidity payout router deploy | 317,232 | 380,679 | 0.00080674 GEN |
+| v1 create deal | 1,086,649 | 2,086,649 | 0.00442204 GEN |
+| v1 propose cancel | 867,658 | 1,867,658 | 0.00395796 GEN |
+| v1 confirm cancel | 867,658 | 1,867,658 | 0.00395796 GEN |
+| v2 configure router | 891,917 | 1,891,917 | 0.00400937 GEN |
+| v2 create deal | 1,086,649 | 2,086,649 | 0.00442204 GEN |
+| v2 submit evidence | 1,035,475 | 2,035,475 | 0.00431360 GEN |
+| v2 assess | 820,751 | 1,820,751 | 0.00385855 GEN |
+| v2 settle | 820,751 | 1,820,751 | 0.00385855 GEN |
+
+The maximum-fee column is a cap using the sampled base fee plus 2 gwei priority fee, not a prediction of actual paid gas. The provider returned a 100,000,000 block gas limit. Legacy parent writes are estimated through the pinned SDK ABI and official Bradbury EVM endpoint; calls are simulated without signing or broadcasting.
+
+## GEN budget requested for live execution
+
+Request 0.15 TEST GEN total, split across two fresh temporary signers:
+
+- Buyer/deployer: 0.13 GEN. Covers v2 deployment, router deployment, buyer-paid parent writes, one v2 redeployment allowance, 0.0002 GEN test principal (refund proceeds may be reused), and about 20% margin for gas movement and one or two corrections.
+- Seller: 0.02 GEN. Covers v1 mutual-cancel confirmation and v2 evidence submission, plus one retry and gas margin.
+
+This is a budget, not a promise to spend all of it. The 0.005 GEN subset is held as child-delivery / correction contingency; uncertain protocol fees and external child gas are not assumed to be zero. Recheck live balances and fee estimates before each signed action. Do not use a different address or an old key.
+
+## GenLayer read path and 403 diagnosis
+
+Reads use the pinned `genlayer-py` Bradbury chain definition (`rpc-bradbury.genlayer.com`) and `gen_call` with the contract address, SDK-encoded calldata, `type=read`, and `status=finalized`. `tools/phase7_live_sdk_reads.py` exercised `deal_count`, `get_ledger(0)`, `get_deal(0)`, and `get_transfer_intents(0)` against the deployed Ghost; it completed with normalized result types and SHA-256 digests, without printing user data. The v0.2.16 method-dispatch and legacy response-envelope adapters remain narrowly pinned.
+
+GenLayer JSON-RPC (`gen_*`) and Bradbury EVM JSON-RPC (`eth_*`, `https://rpc.testnet-chain.genlayer.com`) are separate services. The latter is used only for EVM estimates, simulations, balances, and receipts; it is not a substitute for GenLayer contract reads. A 403 from one egress path is an access-layer rejection, not evidence that the SDK read path or contract failed. The approved alternatives are the official Bradbury GenLayer RPC through an allowed network path, the official GenLayer CLI using the `testnet-bradbury` profile, or an authorized provider endpoint. No proxy or access-control bypass is used.
+
+## Verification limits
+
+The gas probe does not sign, deploy, or spend GEN. Local pytest/GenVM/Studio runs are separate from live-chain proof. A future signed test succeeds only after a GenLayer parent is `FINALIZED` successfully and, for a transfer, the child transaction, router event, recipient balance delta, receipt, and 12-block confirmation are independently matched.
