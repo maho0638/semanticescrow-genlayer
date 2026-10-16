@@ -50,6 +50,39 @@ def test_screenshot_public_success_wrapper_normalizes_to_old_sdk_format():
     assert raw["result"]["status"]["code"]==0
     assert json.loads(calldata.decode(bytes.fromhex(clean["result"])))["remaining_locked"]=="100000000000000"
 
+def test_exact_official_gen_call_metadata_shape_is_success():
+    # docs.genlayer.com/api-references/genlayer-node/gen/gen_call
+    real={"jsonrpc":"2.0","result":{
+        "data":"0x"+calldata.encode(LOCKED).hex(),
+        "eqOutputs":[],
+        "status":{"code":0,"message":"success"},
+        "stdout":"","stderr":"","logs":[{"level":"info","message":"ok"}],
+        "events":[],"messages":[],"nondetDisagreementCallNo":None,
+    }}
+    decoded=normalize_legacy_gen_call_response(real)
+    assert json.loads(calldata.decode(bytes.fromhex(decoded["result"])))["remaining_locked"]=="100000000000000"
+    c,log=client(real)
+    install_bradbury_v0216_dispatch(c)
+    install_bradbury_finalized_read_adapter(c)
+    assert json.loads(actions.read_contract(c,PINNED_GHOST,"get_ledger",args=[0]))["remaining_locked"]=="100000000000000"
+
+@pytest.mark.parametrize("metadata",[
+    {"eqOutputs":"should-be-array"},
+    {"stdout":[]},
+    {"stderr":None},
+    {"messages":{}},
+    {"logs":None},
+    {"events":"incorrect"},
+    {"nondetDisagreementCallNo":True},
+    {"nondetDisagreementCallNo":"0"},
+    {"paid":True},
+])
+def test_official_metadata_validation_fails_closed(metadata):
+    r=envelope()
+    r["result"].update(metadata)
+    with pytest.raises(BradburyReadMismatch):
+        normalize_legacy_gen_call_response(r)
+
 def test_legacy_sdk_real_read_contract_runs_against_real_response_shape():
     c,logs=client()
     install_bradbury_v0216_dispatch(c)
