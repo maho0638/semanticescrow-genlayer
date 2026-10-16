@@ -1,7 +1,7 @@
 name: SemanticEscrow Phase 7 five-validator settlement-intent readback
 on:
   push:
-    branches: [audit/phase7-settlement-intents-20261015]
+    branches: [audit/phase7-settlement-intents-20261015, work/semantic-escrow-completion-20261017]
     paths:
       - '.ci/studio-v123-compose.yml'
       - '.github/workflows/phase7-studio.yml'

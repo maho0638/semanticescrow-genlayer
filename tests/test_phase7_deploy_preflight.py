@@ -5,7 +5,8 @@ from types import SimpleNamespace
 import pytest
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"tools"))
 from phase7_deploy_preflight import (
-    padded_gas, DeployPreviewError, install_deploy_gas_headroom
+    padded_gas, DeployPreviewError, install_deploy_gas_headroom,
+    V2_SOURCE_SHA256, ALLOWED_SOURCE_SHA256, ESTIMATE_GAS_CAP,
 )
 from phase7_legacy_compat import CONSENSUS_PROXY
 
@@ -16,10 +17,17 @@ def test_large_original_deploy_fails_before_taking_test_gen():
     with pytest.raises(DeployPreviewError):
         padded_gas(25_444_878,100_000_000)
 
-@pytest.mark.parametrize("est,limit",[(0,10),(-1,10),(100,101),(105,100),(100,0),(14_900_000,100_000_000)])
+@pytest.mark.parametrize("est,limit",[(0,10),(-1,10),(100,101),(105,100),(100,0),(14_900_001,100_000_000)])
 def test_invalid_headroom_fails_closed(est,limit):
     with pytest.raises(DeployPreviewError):
         padded_gas(est,limit)
+
+def test_v2_exact_source_pin_and_full_headroom_fit_below_bradbury_gate():
+    assert V2_SOURCE_SHA256 in ALLOWED_SOURCE_SHA256
+    assert ESTIMATE_GAS_CAP > 15_900_000
+    assert padded_gas(14_180_000,100_000_000)==15_598_000
+    with pytest.raises(DeployPreviewError):
+        padded_gas(14_500_001,100_000_000)
 
 def test_funded_signer_preview_uses_actual_address(monkeypatch):
     import phase7_deploy_preflight as mod
@@ -33,7 +41,7 @@ def test_funded_signer_preview_uses_actual_address(monkeypatch):
     def rpc(method,params):
         seen.append((method,params))
         if method=="eth_getBlockByNumber":
-            return {"result":{"gasLimit":hex(100_000_000),"baseFeePerGas":"0x1"}}
+            return {"result":{"number":"0x10","gasLimit":hex(100_000_000),"baseFeePerGas":"0x1"}}
         if method=="eth_getBalance":return {"result":hex(10**18)}
         if method=="eth_getTransactionCount":return {"result":"0x0"}
         if method=="eth_estimateGas":return {"result":hex(13_000_000)}
@@ -42,9 +50,12 @@ def test_funded_signer_preview_uses_actual_address(monkeypatch):
     client=SimpleNamespace(provider=SimpleNamespace(make_request=rpc))
     result=mod.preview_deploy(client,"fixture",sender)
     assert result["estimated_gas"]==13_000_000
+    assert result["block_number"]==16
     assert ("eth_getBalance",[sender,"latest"]) in seen
     assert ("eth_getTransactionCount",[sender,"latest"]) in seen
     assert any(method=="eth_estimateGas" and args[0]["from"]==sender for method,args in seen)
+    assert any(method=="eth_estimateGas" and args[0]["gas"]==hex(ESTIMATE_GAS_CAP)
+               for method,args in seen)
     assert any(method=="eth_call" and args[0]["from"]==sender for method,args in seen)
 
 

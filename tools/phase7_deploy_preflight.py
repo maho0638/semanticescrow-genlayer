@@ -17,14 +17,22 @@ from genlayer_py.transactions.fees import normalize_transaction_fees
 from phase7_legacy_compat import CONSENSUS_PROXY, LEGACY_CONSENSUS_ADD
 from phase7_schema_compat import SOURCE_SHA256
 
+# The v2 source is separately pinned after behavior-preserving source
+# minification. Keep this allowlist exact: deploy previews never accept
+# arbitrary contract bytes.
+V2_SOURCE_SHA256 = "abe10708f56f68f389a440321122c43a8753853e595a3ebd337cfc29978cfc61"
+ALLOWED_SOURCE_SHA256 = frozenset((SOURCE_SHA256, V2_SOURCE_SHA256))
+
 # Existing public EOA received 5 TEST GEN, but its signing key was destroyed.
 # Never fund it again. Read-only EVM sender simulation does NOT need its key.
 PUBLIC_READONLY_SENDER = "0x84D37542B362F96282b19D479cF9b06E15ff62eA"
 PRIORITY_FEE_WEI = 2_000_000_000
-# GenLayer CLI #419 documents 16M gas being rejected at Bradbury.
-# This is a conservative release gate, not a proven per-transaction maximum.
-MAX_SAFE_LEGACY_GAS = 15_000_000
+# GenLayer CLI #419 documents 16M gas being rejected at Bradbury. Keep a
+# 100k buffer under that observed boundary; estimates still receive at least
+# 1M / 10% headroom before this gate is applied.
+MAX_SAFE_LEGACY_GAS = 15_900_000
 MIN_HEADROOM = 1_000_000
+ESTIMATE_GAS_CAP = 20_000_000
 
 
 class DeployPreviewError(RuntimeError):
@@ -64,7 +72,7 @@ def padded_gas(estimated, limit):
 def _build_payload(client,source,sender):
     if getattr(client.chain,"id",None)!=4221:
         raise DeployPreviewError("wrong chain")
-    if hashlib.sha256(source.encode()).hexdigest()!=SOURCE_SHA256:
+    if hashlib.sha256(source.encode()).hexdigest() not in ALLOWED_SOURCE_SHA256:
         raise DeployPreviewError("different source bytes")
     schema=client.chain.consensus_main_contract["abi"]
     methods=[m for m in schema if m.get("name")=="addTransaction" and m.get("type")=="function"]
@@ -98,7 +106,10 @@ def preview_deploy(client,source,sender=PUBLIC_READONLY_SENDER):
     tx={"from":sender, "to":CONSENSUS_PROXY,
         "data":payload, "value":"0x0","nonce":nonce,"chainId":"0x107d",
         "maxFeePerGas":hex(base+PRIORITY_FEE_WEI),
-        "maxPriorityFeePerGas":hex(PRIORITY_FEE_WEI)}
+        "maxPriorityFeePerGas":hex(PRIORITY_FEE_WEI),
+        # Bradbury otherwise caps eth_estimateGas at 15M and returns the cap
+        # instead of the transaction's estimate for the v2 source.
+        "gas":hex(min(ESTIMATE_GAS_CAP,limit))}
     estimate=_hex(_rpc(provider,"eth_estimateGas",[tx]))
     safe=padded_gas(estimate,limit)
     if safe*(base+PRIORITY_FEE_WEI)>bal:
@@ -106,7 +117,14 @@ def preview_deploy(client,source,sender=PUBLIC_READONLY_SENDER):
     answer=_rpc(provider,"eth_call",[{**tx,"gas":hex(safe)},"latest"])
     if not isinstance(answer,str) or not answer.startswith("0x"):
         raise DeployPreviewError("padded GenLayer deploy simulation failed")
-    return {"estimated_gas":estimate,"padded_gas":safe,"block_gas_limit":limit}
+    return {
+        "estimated_gas":estimate,
+        "padded_gas":safe,
+        "block_gas_limit":limit,
+        "block_number":_hex(block["number"]),
+        "max_fee_per_gas_wei":base+PRIORITY_FEE_WEI,
+        "max_fee_wei":safe*(base+PRIORITY_FEE_WEI),
+    }
 
 
 def install_deploy_gas_headroom(client):
@@ -121,6 +139,17 @@ def install_deploy_gas_headroom(client):
         return
     original=provider.make_request
     def guarded(method,params):
+        if (method=="eth_estimateGas" and isinstance(params,list) and params
+            and isinstance(params[0],dict)
+            and str(params[0].get("to","" )).lower()==CONSENSUS_PROXY.lower()
+            and str(params[0].get("data","" )).lower().startswith("0x"+LEGACY_CONSENSUS_ADD)):
+            try:
+                block=_rpc(provider,"eth_getBlockByNumber",["latest",False])
+                params=[{**params[0],"gas":hex(min(ESTIMATE_GAS_CAP,_hex(block["gasLimit"])))},*params[1:]]
+            except DeployPreviewError:
+                # Preserve the caller's original RPC error when this helper
+                # cannot read the current block for its estimate ceiling.
+                return original(method,params)
         response=original(method,params)
         if method!="eth_estimateGas" or not isinstance(response,dict) or response.get("error"):
             return response

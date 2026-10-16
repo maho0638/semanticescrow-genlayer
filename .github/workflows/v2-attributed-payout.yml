@@ -16,6 +16,10 @@ on:
       - 'tests/test_v2_attributed_payout_proof.py'
       - 'tools/phase7_bradbury_read_envelope.py'
       - 'tests/test_phase7_bradbury_read_envelope.py'
+      - 'tools/phase7_deploy_preflight.py'
+      - 'tools/phase7_v2_deploy_gas_probe.py'
+      - 'tools/phase7_live_sdk_reads.py'
+      - 'tests/test_phase7_deploy_preflight.py'
       - 'tools/child_delivery_recovery_guard.py'
       - 'tests/test_child_delivery_recovery_guard.py'
       - '.github/workflows/v2-attributed-payout.yml'
@@ -85,6 +89,10 @@ jobs:
           npm install --no-save --no-audit --no-fund solc@0.8.24
           python -m pip install --disable-pip-version-check web3==7.14.0 eth-tester==0.13.0b1 py-evm==0.12.1b1
           python -m pip check
+      - name: Read-only Bradbury v2 and router deployment gas preflight
+        env:
+          PYTHONPATH: tools
+        run: python tools/phase7_v2_deploy_gas_probe.py
       - name: Actually execute replay-safe Solidity payout and invalid-recipient cases
         run: |
           export ACCOUNT_PRIVATE_KEY_1="$(python -c 'from eth_account import Account;print(Account.create().key.hex())')"
