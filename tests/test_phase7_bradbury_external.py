@@ -2,6 +2,7 @@
 import os,json,time,datetime
 from pathlib import Path
 from eth_account import Account
+import pytest
 from gltest import get_contract_factory,get_gl_client,get_default_account,get_accounts
 from gltest.assertions import tx_execution_succeeded
 from gltest.utils import extract_contract_address
@@ -33,6 +34,10 @@ def ok(receipt,step):
 def send(method,args,fees,value=0):
     return method(args=args).transact(value=value,fees=fees,consensus_max_rotations=3,
                                      wait_until="finalized",wait_interval=3000,wait_retries=1200)
+@pytest.mark.skipif(
+    os.environ.get("SEMANTICESCROW_RUN_BRADBURY") != "1",
+    reason="live Bradbury signing is opt-in; use the guarded funded runner",
+)
 def test_bradbury_real_ghost_refund():
     c=get_gl_client()
     p=c.provider
