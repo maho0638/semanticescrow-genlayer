@@ -27,3 +27,30 @@ jobs:
         run: |
           python -m pip install --disable-pip-version-check genlayer-test==0.30.0rc2
           python tools/phase7_pinned_sdk_introspect.py
+      - name: Attest actual signed calldata against pinned source (read-only)
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import sys,requests
+          from genlayer_py.chains.testnet_bradbury import testnet_bradbury
+          from genlayer_py.client.genlayer_client import GenLayerClient
+          sys.path.insert(0,str(Path("tools").resolve()))
+          from phase7_existing_bradbury import EVM_TX, ORIGINAL_BUYER
+          from phase7_legacy_compat import _install_legacy_consensus_abi
+          from phase7_deploy_preflight import _build_payload
+          code=Path("contracts/semantic_escrow.py").read_text(encoding="utf-8")
+          cli=GenLayerClient(testnet_bradbury,None)
+          _install_legacy_consensus_abi(cli.chain.consensus_main_contract)
+          expected=_build_payload(cli,code,ORIGINAL_BUYER)
+          response=requests.post(
+            "https://rpc.testnet-chain.genlayer.com",
+            json={"jsonrpc":"2.0","id":1,"method":"eth_getTransactionByHash","params":[EVM_TX]},
+            timeout=30,
+          ).json()
+          actual=(response.get("result") or {}).get("input","")
+          match=isinstance(actual,str) and actual.lower()==expected.lower()
+          print("SE7_LIVE_SIGNED_EXACT_SOURCE_MATCH",match,flush=True)
+          print("SE7_LIVE_SOURCE_BYTES",len(code.encode("utf-8")),flush=True)
+          assert match, "Actual signed input differs from pinned source"
+          PY
