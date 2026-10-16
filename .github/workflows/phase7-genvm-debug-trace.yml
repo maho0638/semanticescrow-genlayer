@@ -24,5 +24,5 @@ jobs:
         run: python tools/phase7_genvm_debug_trace.py
       - name: Inspect v0.6 immutable calldata without replay
         run: |
-          python -m pip install --disable-pip-version-check eth-abi==5.2.0 eth-utils==5.3.0 requests==2.32.5 pycryptodome==3.23.0
+          python -m pip install --disable-pip-version-check eth-abi==5.2.0 eth-utils==5.3.0 requests==2.32.5 pycryptodome==3.23.0 rlp==4.1.0
           python tools/phase7_exact_failed_calldata.py
