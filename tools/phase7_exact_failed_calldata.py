@@ -84,7 +84,7 @@ def main():
     print("SE7_EXACT_CALLDATA_TYPE",type(obj).__name__,flush=True)
     if isinstance(obj,dict):
         print("SE7_EXACT_CALLDATA_FIELDS",sorted(obj),flush=True)
-        print("SE7_EXACT_CALLDATA_METHOD",obj.get("method"),flush=True)
+        print("SE7_EXACT_CALLDATA_METHOD",obj.get("",obj.get("method")),flush=True)
         args=obj.get("args")
         if isinstance(args,list):
             print("SE7_EXACT_CALLDATA_ARG_COUNT",len(args),flush=True)
