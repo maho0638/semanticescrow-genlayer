@@ -89,11 +89,15 @@ plus new adversarial reconciliation/EVM trace tests. All tests use mocks or
 local Direct Mode; no onchain GEN is spent. Linter, contract-source SHA pin
 and Python compilation are asserted.
 
-Earlier run with the first **62** new adversarial tests:
-https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38882562182
+**Final verified CI:** https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38882846009
+— `completed/success`, **326/326 tests passed**, comprising 1 legacy web
+probe + 153 Direct Mode + 12 old receipt checks + 83 SDK/safety checks +
+**77 new release/trace adversarial checks**. Pinned contract SHA-256 check,
+Python compilation and GenVM lint also passed. Previous 62-test version:
+https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38882562182.
 
-The final workflow run of this scope must be reported separately; **do not
-claim success for CI until completed successfully**.
+These new 77 are mock/offchain verification-policy tests, NOT 77 new signed
+Bradbury transactions, and do NOT establish real refund credit.
 
 ## Release blockers — not fixed / no release permission
 
