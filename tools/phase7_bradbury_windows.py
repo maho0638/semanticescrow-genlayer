@@ -65,6 +65,16 @@ def main():
     if "--diagnose-only" in sys.argv:
         print("DIAGNOSTIC COMPLETE. NO TEST WALLET FUNDING REQUESTED.",flush=True)
         return 0
+    # A real payable create_deal against the EXACT currently pinned source
+    # became FINALIZED but FINISHED_WITH_ERROR on Bradbury (known tx below).
+    # Blocking every NEW funded test from this CLI avoids burning another
+    # ephemeral test wallet until a trace-backed fix is tested, including
+    # the --force-new-deploy path. This is an intentional temporary NO-GO.
+    print("SE7_PUBLIC_KNOWN_PAID_CREATE_DEAL_FAILURE_FINALIZED_WITH_ERROR",flush=True)
+    print("SE7_PUBLIC_KNOWN_FAILED_GENLAYER_TX 0x1ba86f039ae5b7b6fc7cd6e1b4f8349fb16f3124f6c7e4b9f235d08b83e82c06",flush=True)
+    print("NO GEN REQUESTED: pinned source fails real payable create_deal.",flush=True)
+    print("Do not fund a new ephemeral wallet until runtime cause and corrective test are proven.",flush=True)
+    return 5
     # Default: reuse the first successful GenVM deployment, not another
     # expensive deploy. A new signing wallet is requested ONLY once the
     # prior contract's exact source and FINALIZED result are verified.
