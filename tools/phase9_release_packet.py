@@ -78,7 +78,7 @@ def get_local_source_fingerprints(root):
     binder=_load_text(root,"tools/phase7_schema_compat.py").decode("utf-8")
     require(re.search(r"^SOURCE_SHA256\s*=\s*['\"]"+SOURCE_SHA+r"['\"]",binder,re.M) is not None,
             "schema compiler source-pin mismatch")
-    files={CONTRACT_REL:SOURCE_SHA}
+    files={CONTRACT_REL:SOURCE_SHA,"tools/phase7_schema_compat.py":sha(_load_text(root,"tools/phase7_schema_compat.py"))}
     for relative in TOOLS_REQUIRED:
         files[relative]=sha(_load_text(root,relative))
     return {
