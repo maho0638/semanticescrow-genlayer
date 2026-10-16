@@ -53,6 +53,8 @@ def verify_attributed_native_gen(
     require(item["status"]=="QUEUED_UNVERIFIED","not an onchain queued escrow payment")
     amount=wei(item["amount_wei"],positive=True)
     receiver=address(item["recipient"])
+    checksum_receiver=w3.to_checksum_address(receiver)
+    checksum_router=w3.to_checksum_address(router_addr)
     require(type(item["kind"]) is str and item["kind"] in ("PAYOUT","REFUND"),"wrong intent kind")
     require(commitment({
         "domain":"SemanticEscrow.transfer-intent.v1",
@@ -108,7 +110,7 @@ def verify_attributed_native_gen(
     require(latest-height>=minimum_confirmations,"EVM receipt not sufficiently confirmed")
     canonical=w3.eth.get_block(height)
     require(canonical["hash"]==receipt["blockHash"],"reorg/mismatched receipt block hash")
-    bytecode=w3.eth.get_code(router_addr,block_identifier=height)
+    bytecode=w3.eth.get_code(checksum_router,block_identifier=height)
     require(bool(bytecode),"router EVM code missing")
     require(hashlib.sha256(bytes(bytecode)).hexdigest()==pin,"router bytecode does not match trusted audited deployment")
     require(address(router.functions.escrowGhost().call(block_identifier=height))==ghost,
@@ -139,10 +141,10 @@ def verify_attributed_native_gen(
     # EOA requirement ensures the beneficiary cannot forward value from a
     # contract fallback during delivery. The block-balance delta is a
     # conservative *extra* guard; concurrent activity may cause fail-closed.
-    require(w3.eth.get_code(receiver,block_identifier=height)==b"",
+    require(w3.eth.get_code(checksum_receiver,block_identifier=height)==b"",
             "beneficiary is a contract, not an EOA")
-    pre=w3.eth.get_balance(receiver,block_identifier=height-1)
-    post=w3.eth.get_balance(receiver,block_identifier=height)
+    pre=w3.eth.get_balance(checksum_receiver,block_identifier=height-1)
+    post=w3.eth.get_balance(checksum_receiver,block_identifier=height)
     require(type(pre) is int and type(post) is int and post-pre==amount,
             "EOA block-balance delta not uniquely attributable")
     return {
