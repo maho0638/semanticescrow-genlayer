@@ -65,16 +65,21 @@ def main():
     if "--diagnose-only" in sys.argv:
         print("DIAGNOSTIC COMPLETE. NO TEST WALLET FUNDING REQUESTED.",flush=True)
         return 0
-    # A real payable create_deal against the EXACT currently pinned source
-    # became FINALIZED but FINISHED_WITH_ERROR on Bradbury (known tx below).
-    # Blocking every NEW funded test from this CLI avoids burning another
-    # ephemeral test wallet until a trace-backed fix is tested, including
-    # the --force-new-deploy path. This is an intentional temporary NO-GO.
-    print("SE7_PUBLIC_KNOWN_PAID_CREATE_DEAL_FAILURE_FINALIZED_WITH_ERROR",flush=True)
-    print("SE7_PUBLIC_KNOWN_FAILED_GENLAYER_TX 0x1ba86f039ae5b7b6fc7cd6e1b4f8349fb16f3124f6c7e4b9f235d08b83e82c06",flush=True)
-    print("NO GEN REQUESTED: pinned source fails real payable create_deal.",flush=True)
-    print("Do not fund a new ephemeral wallet until runtime cause and corrective test are proven.",flush=True)
-    return 5
+    # The v0.19rc2 SDK previously sent {"": "create_deal"} while the
+    # official GenVM v0.2.16 runner expects {"method": "create_deal"}.
+    # Perform a zero-GEN pre-funding gate; the live integration test also
+    # installs this exact adapter before any signed write.
+    from phase7_legacy_method_dispatch import canonical_v0216_calldata
+    from genlayer_py.contracts.utils import make_calldata_object
+    old=make_calldata_object(method="create_deal",args=["seller","terms","nonce"])
+    fixed=canonical_v0216_calldata("create_deal",["seller","terms","nonce"])
+    if old.get("")!="create_deal" or fixed.get("method")!="create_deal" or "" in fixed:
+        print("METHOD DISPATCH NOT VERIFIED. NO GEN FUNDING REQUESTED.",flush=True)
+        return 5
+    if "--force-new-deploy" in sys.argv:
+        print("NO NEW DEPLOYMENT: must reuse finalized pinned contract.",flush=True)
+        return 5
+    print("SE7_PUBLIC_CANONICAL_V0216_DISPATCH_PREFUNDING_PASS",flush=True)
     # Default: reuse the first successful GenVM deployment, not another
     # expensive deploy. A new signing wallet is requested ONLY once the
     # prior contract's exact source and FINALIZED result are verified.
