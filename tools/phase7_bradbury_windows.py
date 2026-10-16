@@ -125,8 +125,9 @@ def main():
     args=[str(binary),"tests/test_phase7_bradbury_external.py","-v","-s",
           "--network","testnet_bradbury","--rpc-url",URL]
     print("Executing signed escrow test against Bradbury. Private keys stay in RAM.",flush=True)
+    print("This may take several hours while onchain consensus and refund finalize. KEEP THIS WINDOW OPEN.",flush=True)
     try:
-        proc=subprocess.run(args,env=env,capture_output=True,text=True,errors="replace",timeout=55*60)
+        proc=subprocess.run(args,env=env,capture_output=True,text=True,errors="replace",timeout=6*60*60)
     except subprocess.TimeoutExpired:
         print("TIMEOUT: inspect chain state before retry.",flush=True)
         return 3
