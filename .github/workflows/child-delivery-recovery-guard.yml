@@ -4,6 +4,8 @@ on:
     branches: [audit/child-delivery-recovery-guard-20261016]
     paths:
       - 'tools/child_delivery_recovery_guard.py'
+      - 'tools/child_delivery_incident_cli.py'
+      - 'tests/test_child_delivery_incident_cli.py'
       - 'tests/test_child_delivery_recovery_guard.py'
       - '.github/workflows/child-delivery-recovery-guard.yml'
       - 'contracts/semantic_escrow.py'
@@ -35,7 +37,7 @@ jobs:
           assert b'gl.vm.run_nondet_unsafe(k,n)' in s
           print('SE7_LEGACY_SOURCE_SHA_PIN_PASS')
           PY
-          python -m compileall -q contracts tests tools/phase8_release_gate.py tools/phase8_ghost_public_probe.py tools/phase9_release_packet.py tools/child_delivery_recovery_guard.py
+          python -m compileall -q contracts tests tools/phase8_release_gate.py tools/phase8_ghost_public_probe.py tools/phase9_release_packet.py tools/child_delivery_recovery_guard.py tools/child_delivery_incident_cli.py
           genvm-lint lint contracts/semantic_escrow.py --json
       - name: Reconstruct disposable test-only SDK package from official v0.2.16 source
         shell: bash
