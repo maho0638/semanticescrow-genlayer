@@ -50,10 +50,10 @@ def cd_decode(raw):
         if typ==4:return read(cnt).decode("utf8")
         if typ==5:return [item(level+1) for _ in range(cnt)]
         if typ==6:
-            d={};prev=""
+            d={};prev=None
             for i in range(cnt):
                 key=read(var()).decode("utf8")
-                if key<=prev or key in d:raise ValueError("unordered keys")
+                if (prev is not None and key<=prev) or key in d:raise ValueError("unordered keys")
                 prev=key;d[key]=item(level+1)
             return d
         raise ValueError("unknown calldata tag")
