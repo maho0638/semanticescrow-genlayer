@@ -42,3 +42,34 @@ A hosted automation environment cannot substitute for the user's own Windows ses
 ## Risk boundary
 
 The user explicitly authorizes **test GEN**, temporary test wallets and testnet contract calls; no authorization for valuable funds, production or mainnet. DNS/redirect/SSRF egress and asynchronous child-transfer failure/retry safety still require dedicated separate validation and design review before valuable user custody. No PR, `main` change, Portal submission, mail access or production deployment occurred.
+
+## Real signed Bradbury v0.2.16 deployment — read-only postmortem (2026-10-16, after original report)
+
+**This is the first true successful GenVM execution for the v0.2.16 source on Bradbury, but NOT yet finalization or escrow cash-flow success.**
+
+- Original ephemeral buyer: `0x1B982344f53257768E971DBb152907cBa33D632C`. It was funded with 5 Bradbury **TEST** GEN; Python process exited after receipt-decoder failure and its disposable private key is unavailable. **Never fund this address again.**
+- EVM submission: `0x2bddc2919cde1aee0cc751e3735daa7e0ecc9fbcbab91b2bc28dd6d698455bf8`. EVM receipt `status=1`, block `25,302,687`, gas used `12,515,307`, 12 EVM logs, 6-input selector `0xe71d5196`, verified sender and ConsensusMain target.
+- Separate GenLayer ID from the genuine EVM ConsensusMain `NewTransaction` event: `0x1ac72cb02a02cdf8709615b8aeed51610128dddd1a87128b58623aab73220c43`.
+- Legacy ConsensusData v0.6: `status=5 ACCEPTED`, `txExecutionResult=1 FINISHED_WITH_RETURN`, both transaction ID fields match. **This is a successful GenVM execution, but not `FINALIZED`.**
+- Ghost contract address: `0x73dc7ee6f7406b01ef7d607f8d1a48a780afa12a`; 300-byte Ghost runtime code exists. That is NOT independent proof of finality or beneficiary payment.
+- At public read-only 2026-10-16 09:04 UTC: `canFinalize=false`; its returned future timestamp `1792142110` = 2026-10-16 09:15:10 UTC = 12:15:10 Türkiye. A deadline passing alone does not materialize onchain finalization.
+- At same time, read-only old buyer `eth_getBalance=4973692551852307400 wei` (about 4.9736925518523074 test GEN), nonce=1. Private key wasn't preserved, and spending this remainder must not be promised.
+- Onchain signed calldata was **byte-identical** to the exact source-pin-passing local `_build_payload` with buyer `0x1B98...` and 15,738 source bytes; no another-source ambiguity.
+- These facts were verified by [actual-chain read-only workflow](https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38876301749), [finality and bytecode probe](https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38876532744), [exact signed source match](https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38877938857).
+
+### Why original Windows runner stopped
+
+It displayed `DeploymentError` caused by `LegacyReceiptError` **after a real EVM broadcast**. The exact early malformed record was not preserved, so its precise underlying reason cannot be proven retrospectively. However, a later identical-ID read decoded cleanly and confirmed GenVM successful execution. The first version's v0.6 reader also omitted the mandatory `lifecycle` that pinned `genlayer-py==0.19.0rc2`'s `wait_for_finalization` requires; that was a separate definite latent failure.
+
+Corrections are now on the test branch:
+1. v0.6 reader decodes a truthful `lifecycle`: ACCEPTED is `decided`, FINALIZED is `finalized`; never prematurely finalizes.
+2. Bounded retry handles briefly inconsistent legacy reads without suppressing persistent invalid data or RPC failure.
+3. Existing exact signed deployment is now re-attested read-only against EVM original input, pinned contract SHA, known GenLayer tx ID and Ghost, real `status=FINALIZED + FINISHED_WITH_RETURN`. No new buyer wallet is requested **unless the existing deployment is provably finalized**. Default subsequent Windows run reuses the existing contract and skips duplicate deploy. It asks for approximately **2 test GEN** for remaining payable deal/counterparty cancellation/beneficiary refund proof only after that gate. User can explicitly opt into fresh deployment, but blind duplicate deploy must be avoided.
+4. Test suite updated: `1` old web + `153` Direct Mode + `12` legacy receipt + `82` additional offline/adversarial tests = **248 PASS** [GitHub workflow](https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38877848740). Other five-validator full Studio tests used the identical contract blob; contract source unchanged.
+
+### Decisive remaining tests
+
+- Observe a stored protocol `FINALIZED` for the known GenLayer tx ID; mere passage of 12:15:10 Türkiye or a `canFinalize=true` getter is insufficient.
+- After that, from user's Windows repository folder run `git pull` and then `powershell -ExecutionPolicy Bypass -File .\\scripts\\run-bradbury-windows.ps1`. Current new runner first tests the existing signed calldata and finality; **only if it passes** does it print a new temporary buyer address for 2 Bradbury TEST GEN. The user must not send anything to old address or to a closed temporary test wallet.
+- Confirm fresh real payable `create_deal`, mutual cancel and actually credited EVM buyer refund with before/after balances. Neither this step nor child payment receipts have yet occurred.
+- Investigate/propose safe failed-child message recovery before valuable live funds, independent audit. No production deployment, main update, PR, merge or Portal submission.
