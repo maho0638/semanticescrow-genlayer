@@ -7,6 +7,8 @@ on:
       - 'contracts/evm/SemanticEscrowNativePayoutRouter.sol'
       - 'tests/test_v2_ic_router_source.py'
       - 'tests/test_v2_evm_payout_router.py'
+      - 'tools/v2_attributed_payout_proof.py'
+      - 'tests/test_v2_attributed_payout_proof.py'
       - '.github/workflows/v2-attributed-payout.yml'
   workflow_dispatch:
 permissions:
