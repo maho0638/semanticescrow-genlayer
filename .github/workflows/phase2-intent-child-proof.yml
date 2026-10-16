@@ -4,6 +4,8 @@ on:
     branches: [audit/phase2-payment-intent-proof-20261016]
     paths:
       - 'tools/phase2_intent_child_correlator.py'
+      - 'tools/phase2_public_parent_probe.py'
+      - 'tests/test_phase2_public_parent_probe.py'
       - 'tests/test_phase2_intent_child_correlator.py'
       - 'tools/child_delivery_incident_cli.py'
       - 'tests/test_child_delivery_incident_cli.py'
@@ -38,7 +40,7 @@ jobs:
           assert b'gl.vm.run_nondet_unsafe(k,n)' in s
           print('SE7_LEGACY_SOURCE_SHA_PIN_PASS')
           PY
-          python -m compileall -q contracts tests tools/phase8_release_gate.py tools/phase8_ghost_public_probe.py tools/phase9_release_packet.py tools/child_delivery_recovery_guard.py tools/child_delivery_incident_cli.py tools/phase2_intent_child_correlator.py
+          python -m compileall -q contracts tests tools/phase8_release_gate.py tools/phase8_ghost_public_probe.py tools/phase9_release_packet.py tools/child_delivery_recovery_guard.py tools/child_delivery_incident_cli.py tools/phase2_intent_child_correlator.py tools/phase2_public_parent_probe.py
           genvm-lint lint contracts/semantic_escrow.py --json
       - name: Reconstruct disposable test-only SDK package from official v0.2.16 source
         shell: bash
@@ -63,6 +65,6 @@ jobs:
           python -m pytest -q --maxfail=1 tests/test_phase2_contract.py tests/test_phase4_payment.py tests/test_phase5_disputes.py tests/test_phase6_adversarial.py tests/test_phase7_intents.py
           python -m pytest -q tests/test_phase7_legacy_receipts.py
           python -m pytest -q tests/test_phase7_legacy_compat.py tests/test_phase7_schema_compat.py tests/test_phase7_deploy_preflight.py tests/test_phase7_legacy_sdk_path.py tests/test_phase7_rpc_diagnostics.py tests/test_phase7_evm_receipt.py tests/test_phase7_windows_relay.py tests/test_phase7_external_safety_order.py tests/test_phase7_existing_bradbury.py
-          python -m pytest -q tests/test_phase8_release_gate.py tests/test_phase8_ghost_public_probe.py tests/test_phase9_release_packet.py tests/test_child_delivery_recovery_guard.py tests/test_child_delivery_incident_cli.py tests/test_phase2_intent_child_correlator.py
+          python -m pytest -q tests/test_phase8_release_gate.py tests/test_phase8_ghost_public_probe.py tests/test_phase9_release_packet.py tests/test_child_delivery_recovery_guard.py tests/test_child_delivery_incident_cli.py tests/test_phase2_intent_child_correlator.py tests/test_phase2_public_parent_probe.py
           python -m pip check
 
