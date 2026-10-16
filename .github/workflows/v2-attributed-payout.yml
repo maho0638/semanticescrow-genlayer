@@ -1,7 +1,9 @@
 name: SemanticEscrow V2 attributed native GEN payout real EVM tests
 on:
   push:
-    branches: [feature/intent-bound-gen-payout-v2-20261016]
+    branches:
+      - feature/intent-bound-gen-payout-v2-20261016
+      - work/semantic-escrow-completion-20261017
     paths:
       - 'contracts/semantic_escrow_attributed_v2.py'
       - 'contracts/evm/SemanticEscrowNativePayoutRouter.sol'
@@ -12,6 +14,10 @@ on:
       - 'tests/test_phase7_method_dispatch_compat.py'
       - 'tools/v2_attributed_payout_proof.py'
       - 'tests/test_v2_attributed_payout_proof.py'
+      - 'tools/phase7_bradbury_read_envelope.py'
+      - 'tests/test_phase7_bradbury_read_envelope.py'
+      - 'tools/child_delivery_recovery_guard.py'
+      - 'tests/test_child_delivery_recovery_guard.py'
       - '.github/workflows/v2-attributed-payout.yml'
   workflow_dispatch:
 permissions:
@@ -66,7 +72,7 @@ jobs:
           python -m pytest -q --maxfail=1 tests/test_phase2_contract.py tests/test_phase4_payment.py tests/test_phase5_disputes.py tests/test_phase6_adversarial.py tests/test_phase7_intents.py
           python -m pytest -q tests/test_phase7_legacy_receipts.py
           python -m pytest -q tests/test_phase7_legacy_compat.py tests/test_phase7_schema_compat.py tests/test_phase7_deploy_preflight.py tests/test_phase7_legacy_sdk_path.py tests/test_phase7_rpc_diagnostics.py tests/test_phase7_evm_receipt.py tests/test_phase7_windows_relay.py tests/test_phase7_external_safety_order.py tests/test_phase7_existing_bradbury.py
-          python -m pytest -q tests/test_phase8_release_gate.py tests/test_phase8_ghost_public_probe.py tests/test_phase9_release_packet.py tests/test_child_delivery_recovery_guard.py tests/test_child_delivery_incident_cli.py tests/test_phase2_intent_child_correlator.py tests/test_phase2_public_parent_probe.py
+          python -m pytest -q tests/test_phase8_release_gate.py tests/test_phase8_ghost_public_probe.py tests/test_phase9_release_packet.py tests/test_child_delivery_recovery_guard.py tests/test_child_delivery_incident_cli.py tests/test_phase2_intent_child_correlator.py tests/test_phase2_public_parent_probe.py tests/test_phase7_bradbury_read_envelope.py
           python -m pip check
 
 
