@@ -30,7 +30,7 @@ def ok(receipt,step):
     assert passed
 def send(method,args,fees,value=0):
     return method(args=args).transact(value=value,fees=fees,consensus_max_rotations=3,
-                                     wait_until="finalized",wait_interval=3000,wait_retries=140)
+                                     wait_until="finalized",wait_interval=3000,wait_retries=1200)
 def test_bradbury_real_ghost_refund():
     c=get_gl_client()
     p=c.provider
@@ -70,7 +70,7 @@ def test_bradbury_real_ghost_refund():
         print("SE7_PUBLIC_STEP DEPLOY_BEGIN",flush=True)
         try:
             d=fac.deploy_contract_tx(account=buyer,fees=fees,wait_until="finalized",
-                                     consensus_max_rotations=3,wait_retries=140,wait_interval=3000)
+                                     consensus_max_rotations=3,wait_retries=1200,wait_interval=3000)
         except Exception as exc:
             print("SE7_PUBLIC_DEPLOY_EXCEPTION_CLASS",type(exc).__name__,flush=True)
             cause=exc
@@ -135,7 +135,9 @@ def test_bradbury_real_ghost_refund():
     assert rows[0]["amount_wei"]==str(VALUE) and rows[0]["status"]=="QUEUED_UNVERIFIED"
     print("SE7_PUBLIC_SETTLEMENT_INTENT",rows[0]["intent_id_sha256"],flush=True)
     assert int(con.get_total_locked().call())==0
-    for _ in range(65):
+    # Child on-finalized GEN transfers can need another appeal/finality window.
+    # Poll READ-ONLY for up to 60 min; never re-send the GEN message.
+    for _ in range(1200):
         delta=balance(p,buyer.address)-before
         if delta==VALUE:
             print("SE7_PUBLIC_EVM_BENEFICIARY_CREDIT",delta,flush=True)
