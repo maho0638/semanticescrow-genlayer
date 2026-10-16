@@ -30,6 +30,6 @@ jobs:
           python tools/phase7_exact_failed_calldata.py
       - name: Verify Windows diagnostic avoids fabricated errors and secrets
         run: |
-          python -m pip install --disable-pip-version-check pytest==9.1.1
+          python -m pip install --disable-pip-version-check pytest==9.1.1 genlayer-test==0.30.0rc2
           python -m compileall -q tools/phase7_genvm_trace_windows.py
           python -m pytest -q tests/test_phase7_genvm_windows_trace.py
