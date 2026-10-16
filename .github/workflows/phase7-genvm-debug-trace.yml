@@ -32,4 +32,6 @@ jobs:
         run: |
           python -m pip install --disable-pip-version-check pytest==9.1.1 genlayer-test==0.30.0rc2
           python -m compileall -q tools/phase7_genvm_trace_windows.py
+          export ACCOUNT_PRIVATE_KEY_1="$(python -c 'from eth_account import Account;print(Account.create().key.hex())')"
+          export ACCOUNT_PRIVATE_KEY_2="$(python -c 'from eth_account import Account;print(Account.create().key.hex())')"
           python -m pytest -q tests/test_phase7_genvm_windows_trace.py
