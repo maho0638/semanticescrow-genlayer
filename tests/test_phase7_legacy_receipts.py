@@ -45,6 +45,63 @@ def test_strict_finality_gate_rejects_accepted_and_failed_execution():
     assert not is_finalized_success(None)
 
 
+def test_new_sdk_finalization_lifecycle_reads_legacy_transaction():
+    # Exact installed genlayer-py 0.19rc2 wait_for_finalization needs lifecycle.
+    from genlayer_py.transactions.actions import wait_for_finalization
+    raw,full=samples(status=5,execution=1)
+    accepted=decode_bradbury_transaction(TXID,raw,full)
+    assert accepted["lifecycle"]=={"state":"decided","outcome":"accepted"}
+    raw,full=samples(status=7,execution=1)
+    finalized=decode_bradbury_transaction(TXID,raw,full)
+    assert finalized["lifecycle"]=={"state":"finalized"}
+    responses=iter([accepted,finalized])
+    fake=SimpleNamespace(get_transaction=lambda transaction_hash:next(responses))
+    result=wait_for_finalization(fake,TXID,interval=0,retries=3,full_transaction=True)
+    assert result["status"]==7
+    assert result["tx_execution_result_name"]=="FINISHED_WITH_RETURN"
+
+
+def test_bounded_retry_only_for_unready_legacy_record(monkeypatch):
+    import phase7_legacy_receipts as module
+    raw,all_record=samples(status=5,execution=1)
+    fake_storage=SimpleNamespace(
+        functions=SimpleNamespace(
+            getTransactionData=lambda *args:SimpleNamespace(call=lambda:raw),
+            getTransactionAllData=lambda *args:SimpleNamespace(call=lambda:(all_record,[])),
+        ),
+    )
+    client=SimpleNamespace(chain=SimpleNamespace(id=4221,consensus_data_contract={"address":BRADBURY_DATA}),
+        w3=SimpleNamespace(eth=SimpleNamespace(contract=lambda **kw:fake_storage)))
+    original=module.decode_bradbury_transaction
+    attempts=[]
+    def transient(txid,data,entire):
+        attempts.append(txid)
+        if len(attempts)<3:raise LegacyReceiptError("incomplete read")
+        return original(txid,data,entire)
+    monkeypatch.setattr(module,"decode_bradbury_transaction",transient)
+    monkeypatch.setattr(module.time,"sleep",lambda t:None)
+    received=module.read_bradbury_transaction(client,TXID)
+    assert received["status_name"]=="ACCEPTED"
+    assert len(attempts)==3
+
+
+def test_permanently_bad_legacy_read_never_turns_into_success(monkeypatch):
+    import phase7_legacy_receipts as module
+    raw,all_record=samples(status=5,execution=1)
+    all_record[12]=bytes.fromhex("cd"*32)
+    fake_storage=SimpleNamespace(
+        functions=SimpleNamespace(
+            getTransactionData=lambda *args:SimpleNamespace(call=lambda:raw),
+            getTransactionAllData=lambda *args:SimpleNamespace(call=lambda:(all_record,[])),
+        ),
+    )
+    client=SimpleNamespace(chain=SimpleNamespace(id=4221,consensus_data_contract={"address":BRADBURY_DATA}),
+        w3=SimpleNamespace(eth=SimpleNamespace(contract=lambda **kw:fake_storage)))
+    monkeypatch.setattr(module.time,"sleep",lambda t:None)
+    with pytest.raises(LegacyReceiptError,match="inconsistent consensus transaction ids"):
+        module.read_bradbury_transaction(client,TXID)
+
+
 def test_real_prior_bradbury_error_must_stay_error():
     raw,entire=samples(execution=2)
     receipt=decode_bradbury_transaction(TXID,raw,entire)
