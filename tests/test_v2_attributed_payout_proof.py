@@ -125,3 +125,24 @@ def test_a_reverted_evm_payout_is_never_delivery(case):
     assert tx.status==0
     with pytest.raises((EvidenceRejected,ValueError)):
         case["check"](payout_evm_tx=chain.to_hex(tx.transactionHash))
+
+def test_actual_official_genlayer_node_receipt_camelcase_and_numeric_codes(case):
+    parent=copy.deepcopy(case["parent"])
+    parent["statusName"]="Finalized"
+    parent["txExecutionResultName"]="FinishedWithReturn"
+    parent["status"]=7
+    parent["txExecutionResult"]=1
+    parent.pop("status_name")
+    parent.pop("tx_execution_result_name")
+    proof=case["check"](read_finalized_parent=lambda _:parent)
+    assert proof["status"]=="V2_ROUTER_PAYMENT_PROVEN_FOR_INTENT"
+
+@pytest.mark.parametrize("numeric_status,numeric_execution",[
+    (5,1),(8,1),(7,2),(7,0)
+])
+def test_protocol_numeric_codes_cannot_contradict_success(case,numeric_status,numeric_execution):
+    parent=copy.deepcopy(case["parent"])
+    parent["status"]=numeric_status
+    parent["txExecutionResult"]=numeric_execution
+    with pytest.raises(EvidenceRejected):
+        case["check"](read_finalized_parent=lambda _:parent)
