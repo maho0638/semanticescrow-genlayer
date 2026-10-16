@@ -103,7 +103,11 @@ def verify_attributed_native_gen(
 
     # Independently pin real EVM runtime code. A self-selected digest from
     # the same untrusted RPC is NOT a trusted code pin.
-    receipt=w3.eth.get_transaction_receipt(payout_evm_tx)
+    from web3.exceptions import TransactionNotFound
+    try:
+        receipt=w3.eth.get_transaction_receipt(payout_evm_tx)
+    except TransactionNotFound as exc:
+        raise EvidenceRejected("EVM payout transaction receipt not found") from exc
     require(receipt is not None and receipt["status"]==1,"failed/missing EVM transfer receipt")
     height=integer(receipt["blockNumber"],positive=True)
     latest=w3.eth.block_number
