@@ -101,6 +101,17 @@ audit are separate tasks.
 
 The existing 368 historical Stage-9 regressions and new offline test
 cases run in `.github/workflows/child-delivery-recovery-guard.yml`.
-Do not report the final test count or an overall PASS until the latest
-workflow run is completed/success. The first new workflow run failed from
-a SQLite placeholder-count error, which was corrected before re-running.
+Final workflow **COMPLETED SUCCESS**:
+https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38952578691
+
+**407/407 PASS** (1 legacy API + 153 Direct Mode + 12 legacy receipt +
+83 SDK/safety + **158 Phase-8/9 & child guard tests**). These include
+**39 new** child-incident and CLI negative/offline tests over the prior 368.
+Pinned contract SHA-256, compilation, GenVM lint and `pip check`
+also passed in that workflow. These are **mock/offchain checks**, not
+407 Bradbury signed transactions and not real failed-value recovery.
+
+The **first CI run failed** with a SQLite 7-column/6-placeholder mismatch:
+https://github.com/maho0638/semanticescrow-genlayer/actions/runs/38952262404
+The root cause was fixed, and the next CI passed, followed by this final
+407-test success. This failed intermediate run is retained for auditability.
