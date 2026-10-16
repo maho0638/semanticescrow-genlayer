@@ -67,11 +67,22 @@ def decode_bradbury_transaction(tx_id, data, all_record):
         raise LegacyReceiptError("unknown legacy consensus status/result")
     status_name=STATUS_LABELS.get(status,"NOT_DECIDED")
     execution_name=EXECUTION_LABELS[execution]
+    # genlayer-py v0.19rc2 wait_for_finalization() REQUIRES lifecycle.state.
+    # Never mark ACCEPTED as finalized, even with successful GenVM execution.
+    if status==7:
+        lifecycle={"state":"finalized"}
+    elif status==8:
+        lifecycle={"state":"canceled"}
+    elif status in (5,6):
+        lifecycle={"state":"decided","outcome":"accepted" if status==5 else "undetermined"}
+    else:
+        lifecycle={"state":"processing"}
     destination=str(data[2])
     if not Web3.is_address(destination) or Web3.to_checksum_address(destination)=="0x0000000000000000000000000000000000000000":
         raise LegacyReceiptError("missing/invalid consensus recipient")
     return {
         "tx_id":tx_id,
+        "lifecycle":lifecycle,
         "status":status,
         "status_name":getattr(status_name,"value",str(status_name)),
         "tx_execution_result":execution,
@@ -89,9 +100,21 @@ def read_bradbury_transaction(client,transaction_hash):
     tx_id=_canonical_id(transaction_hash)
     storage=client.w3.eth.contract(address=BRADBURY_DATA,abi=_ABI)
     # No broad exception catch: RPC errors must remain visible, not fabricated as pending.
-    raw=storage.functions.getTransactionData(tx_id,int(time.time())).call()
-    all_record,rounds=storage.functions.getTransactionAllData(tx_id).call()
-    return decode_bradbury_transaction(tx_id,raw,all_record)
+    # A just-broadcast NewTransaction event can precede a fully readable
+    # ConsensusData snapshot. Retry only an incomplete *decoded record* for
+    # a short bounded interval; do NOT catch RPC/network faults or invent a
+    # terminal status. A persistent malformed record remains an error.
+    last_error=None
+    for attempt in range(5):
+        raw=storage.functions.getTransactionData(tx_id,int(time.time())).call()
+        all_record,rounds=storage.functions.getTransactionAllData(tx_id).call()
+        try:
+            return decode_bradbury_transaction(tx_id,raw,all_record)
+        except LegacyReceiptError as exc:
+            last_error=exc
+            if attempt<4:
+                time.sleep(2)
+    raise last_error
 
 
 def install_legacy_bradbury_reader(client):
