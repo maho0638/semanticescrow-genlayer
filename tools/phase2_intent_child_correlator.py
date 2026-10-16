@@ -41,7 +41,7 @@ def _native_amount(value):
     # normalized receipts only decimal strings are accepted.
     require(type(value) is str and value,"invalid chain native value")
     if value.startswith("0x"):
-        require(value=="0x0" or (len(value)>3 and value[2]!="0"),
+        require(value=="0x0" or (len(value)>=3 and value[2]!="0"),
                 "noncanonical RPC hex amount")
         try:
             out=int(value,16)
