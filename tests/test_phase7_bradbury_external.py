@@ -16,6 +16,7 @@ from phase7_rpc_diagnostics import install_rpc_diagnostics
 from phase7_legacy_receipts import install_legacy_bradbury_reader, is_finalized_success, read_bradbury_transaction
 from phase7_existing_bradbury import verify_existing_finalized_deployment, GENLAYER_TX
 from phase7_legacy_method_dispatch import install_bradbury_v0216_dispatch
+from phase7_bradbury_read_envelope import install_bradbury_finalized_read_adapter
 BUYER=Account.from_key(os.environ["ACCOUNT_PRIVATE_KEY_1"])
 SELLER=Account.from_key(os.environ["ACCOUNT_PRIVATE_KEY_2"])
 VALUE=10**14
@@ -67,7 +68,9 @@ def test_bradbury_real_ghost_refund():
     install_rpc_diagnostics(c)
     # get_gl_client() is lru_cached and is reused inside ContractFactory.
     install_legacy_bradbury_reader(c)
+    install_bradbury_finalized_read_adapter(c)
     print("SE7_PUBLIC_LEGACY_RECEIPT_READER_READY",flush=True)
+    print("SE7_PUBLIC_V06_FINALIZED_READ_ADAPTER_READY",flush=True)
     if reuse:
         d=read_bradbury_transaction(c,GENLAYER_TX)
         ok(d,"DEPLOY_EXISTING")
