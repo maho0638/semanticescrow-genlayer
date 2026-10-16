@@ -4,6 +4,7 @@ on:
     branches: [test/phase7-bradbury-runtime-compat-20261015]
     paths:
       - 'tools/phase7_current_deploy_postmortem.py'
+      - 'tools/phase7_pinned_sdk_introspect.py'
       - '.github/workflows/phase7-current-deploy-postmortem.yml'
   workflow_dispatch:
 permissions:
@@ -22,3 +23,7 @@ jobs:
       - run: python -m pip install --disable-pip-version-check web3==7.14.0 requests==2.32.5
       - name: Read only known signed tx and legacy protocol state
         run: python tools/phase7_current_deploy_postmortem.py
+      - name: Inspect pinned GenLayer SDK/gltest receipt polling and transaction IDs
+        run: |
+          python -m pip install --disable-pip-version-check genlayer-test==0.30.0rc2
+          python tools/phase7_pinned_sdk_introspect.py
