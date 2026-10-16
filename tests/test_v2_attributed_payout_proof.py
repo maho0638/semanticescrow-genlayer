@@ -49,7 +49,7 @@ def case(env):
         conf={
           "w3":chain,"router":router,"ghost":ghost,
           "intent_id":ident,"parent_id":PARENT,
-          "payout_evm_tx":receipt.transactionHash.hex(),
+          "payout_evm_tx":chain.to_hex(receipt.transactionHash),
           "read_finalized_parent":lambda _:parent,
           "read_canonical_intent":lambda _:item,
           "trusted_router_runtime_sha256":expected,
@@ -116,7 +116,7 @@ def test_evm_logs_are_necessary_parent_cannot_claim_payment_without_log(case):
     other=chain.eth.accounts[0]
     other_tx=chain.eth.send_transaction({"from":other,"to":case["outsider"],"value":1})
     with pytest.raises((EvidenceRejected,ValueError)):
-        case["check"](payout_evm_tx=other_tx.hex())
+        case["check"](payout_evm_tx=chain.to_hex(other_tx))
 
 def test_a_reverted_evm_payout_is_never_delivery(case):
     chain,router=case["chain"],case["router"]
@@ -124,4 +124,4 @@ def test_a_reverted_evm_payout_is_never_delivery(case):
                case["recipient"],case["amount"])
     assert tx.status==0
     with pytest.raises((EvidenceRejected,ValueError)):
-        case["check"](payout_evm_tx=tx.transactionHash.hex())
+        case["check"](payout_evm_tx=chain.to_hex(tx.transactionHash))
