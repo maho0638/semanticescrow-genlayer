@@ -78,6 +78,16 @@ def check(candidate):
         print("SE7_POSTMORTEM","ID_MATCH_DATA",bytes(dec_d[18])==blob,
               "ID_MATCH_ALL",bytes(dec_a[12])==blob,
               "GHOST",dec_d[2],flush=True)
+        code=rpc("eth_getCode",[dec_d[2],"latest"])
+        print("SE7_POSTMORTEM","GHOST_CODE_BYTES",
+              (len(code)-2)//2 if isinstance(code,str) and code.startswith("0x") else "UNKNOWN",flush=True)
+        s3="0x"+keccak(text="canFinalize(bytes32,uint256)")[:4].hex()
+        f=call(s3,payload)
+        if isinstance(f,bytes) and len(f)>=96:
+            v=decode(["bool","uint256","uint256"],f)
+            print("SE7_POSTMORTEM","CAN_FINALIZE",bool(v[0]),"FINALIZE_NUMBERS",int(v[1]),int(v[2]),flush=True)
+        else:
+            print("SE7_POSTMORTEM","CAN_FINALIZE_UNAVAILABLE",flush=True)
         try:
             from phase7_legacy_receipts import decode_bradbury_transaction
             res=decode_bradbury_transaction(candidate,dec_d,dec_a)
