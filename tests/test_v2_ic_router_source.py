@@ -52,7 +52,7 @@ def test_locked_router_configuration_before_accepting_deposit():
 def test_contract_and_router_interface_types_are_identical():
     source=code()
     sol=SOL.read_text()
-    assert "def disburse(self,intent_id:bytes,recipient:Address)->None" in source
+    assert "def disburse(self,intent_id:bytes,recipient:Address,/)->None" in source
     assert "function disburse(bytes calldata intentBytes, address payable recipient)" in sol
     assert "event NativeIntentPaid(" in sol
     assert "delivered[intentId] = true;" in sol
