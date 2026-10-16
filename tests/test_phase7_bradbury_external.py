@@ -13,7 +13,8 @@ from phase7_legacy_compat import require_legacy_bradbury
 from phase7_schema_compat import bind_verified_schema
 from phase7_deploy_preflight import preview_deploy,install_deploy_gas_headroom
 from phase7_rpc_diagnostics import install_rpc_diagnostics
-from phase7_legacy_receipts import install_legacy_bradbury_reader, is_finalized_success
+from phase7_legacy_receipts import install_legacy_bradbury_reader, is_finalized_success, read_bradbury_transaction
+from phase7_existing_bradbury import verify_existing_finalized_deployment, GENLAYER_TX
 BUYER=Account.from_key(os.environ["ACCOUNT_PRIVATE_KEY_1"])
 SELLER=Account.from_key(os.environ["ACCOUNT_PRIVATE_KEY_2"])
 VALUE=10**14
@@ -46,31 +47,40 @@ def test_bradbury_real_ghost_refund():
     print("SE7_PUBLIC_STEP SCHEMA_LOOKUP_BEGIN",flush=True)
     schema = bind_verified_schema(fac)
     print("SE7_PUBLIC_STEP SCHEMA_LOOKUP_PASS", len(schema["methods"]),flush=True)
-    print("SE7_PUBLIC_STEP DEPLOY_SIMULATION_BEGIN",flush=True)
-    checked=preview_deploy(c,fac.contract_code,buyer.address)
-    print("SE7_PUBLIC_STEP DEPLOY_SIMULATION_PASS",checked["estimated_gas"],checked["padded_gas"],flush=True)
-    install_deploy_gas_headroom(c)
+    reuse=os.environ.get("SE7_USE_FINALIZED_EXISTING")=="1"
+    if reuse:
+        print("SE7_PUBLIC_STEP REUSE_DEPLOY_PREFLIGHT_BEGIN",flush=True)
+        existing_ghost=verify_existing_finalized_deployment(c,fac.contract_code)
+        print("SE7_PUBLIC_STEP REUSE_DEPLOY_PREFLIGHT_PASS",existing_ghost,flush=True)
+    else:
+        print("SE7_PUBLIC_STEP DEPLOY_SIMULATION_BEGIN",flush=True)
+        checked=preview_deploy(c,fac.contract_code,buyer.address)
+        print("SE7_PUBLIC_STEP DEPLOY_SIMULATION_PASS",checked["estimated_gas"],checked["padded_gas"],flush=True)
+        install_deploy_gas_headroom(c)
     install_rpc_diagnostics(c)
     # get_gl_client() is lru_cached and is reused inside ContractFactory.
-    # Only this attested Bradbury test client receives the old receipt reader.
     install_legacy_bradbury_reader(c)
     print("SE7_PUBLIC_LEGACY_RECEIPT_READER_READY",flush=True)
-    print("SE7_PUBLIC_STEP DEPLOY_BEGIN",flush=True)
-    try:
-        d=fac.deploy_contract_tx(account=buyer,fees=fees,wait_until="finalized",
-                                 consensus_max_rotations=3,wait_retries=140,wait_interval=3000)
-    except Exception as exc:
-        print("SE7_PUBLIC_DEPLOY_EXCEPTION_CLASS",type(exc).__name__,flush=True)
-        cause=exc
-        for step in range(4):
-            cause=getattr(cause,"__cause__",None)
-            if cause is None:break
-            print("SE7_PUBLIC_DEPLOY_CAUSE",step,type(cause).__name__,flush=True)
-            # Never print raw exception messages: they could contain raw
-            # serialized tx, sensitive headers, or request metadata.
-        raise
-    ok(d,"DEPLOY")
-    ghost=extract_contract_address(d)
+    if reuse:
+        d=read_bradbury_transaction(c,GENLAYER_TX)
+        ok(d,"DEPLOY_EXISTING")
+        ghost=existing_ghost
+        print("SE7_PUBLIC_STEP REUSING_FINALIZED_DEPLOYMENT",ghost,flush=True)
+    else:
+        print("SE7_PUBLIC_STEP DEPLOY_BEGIN",flush=True)
+        try:
+            d=fac.deploy_contract_tx(account=buyer,fees=fees,wait_until="finalized",
+                                     consensus_max_rotations=3,wait_retries=140,wait_interval=3000)
+        except Exception as exc:
+            print("SE7_PUBLIC_DEPLOY_EXCEPTION_CLASS",type(exc).__name__,flush=True)
+            cause=exc
+            for step in range(4):
+                cause=getattr(cause,"__cause__",None)
+                if cause is None:break
+                print("SE7_PUBLIC_DEPLOY_CAUSE",step,type(cause).__name__,flush=True)
+            raise
+        ok(d,"DEPLOY")
+        ghost=extract_contract_address(d)
     code=query(p,"eth_getCode",[ghost,"latest"])
     assert code and code not in ("0x","0x0")
     print("SE7_PUBLIC_GHOST",ghost,flush=True)
