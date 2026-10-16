@@ -46,6 +46,7 @@ TOOLS_REQUIRED=(
 )
 SCHEMA="SemanticEscrow.audit.handoff.v1"
 SHA_RE=re.compile(r"^[0-9a-f]{64}$")
+GIT_SHA_RE=re.compile(r"^[0-9a-f]{40}$")
 BRANCH="audit/phase9-evidence-release-20261016"
 
 class PacketRejected(ValueError):
@@ -89,9 +90,9 @@ def get_local_source_fingerprints(root):
     }
 
 def make_packet(root, commit_sha, *, parent_branch_sha):
-    require(type(commit_sha) is str and SHA_RE.fullmatch(commit_sha) is not None,
+    require(type(commit_sha) is str and GIT_SHA_RE.fullmatch(commit_sha) is not None,
             "unverified audit commit format")
-    require(type(parent_branch_sha) is str and SHA_RE.fullmatch(parent_branch_sha) is not None,
+    require(type(parent_branch_sha) is str and GIT_SHA_RE.fullmatch(parent_branch_sha) is not None,
             "invalid Phase7 pinned parent SHA format")
     fp=get_local_source_fingerprints(root)
     packet={
@@ -148,10 +149,10 @@ def verify_packet(packet,root):
     require(packet["schema"]==SCHEMA and packet["project"]=="maho0638/semanticescrow-genlayer",
             "wrong project or packet schema")
     require(packet["audit_branch"]==BRANCH,"unexpected branch")
-    require(type(packet["audit_commit"]) is str and SHA_RE.fullmatch(packet["audit_commit"]) is not None,
+    require(type(packet["audit_commit"]) is str and GIT_SHA_RE.fullmatch(packet["audit_commit"]) is not None,
             "bad audit commit")
     require(type(packet["origin_phase7_commit"]) is str and
-            SHA_RE.fullmatch(packet["origin_phase7_commit"]) is not None,"bad phase7 parent")
+            GIT_SHA_RE.fullmatch(packet["origin_phase7_commit"]) is not None,"bad phase7 parent")
     require(packet["contract"]==get_local_source_fingerprints(root),
             "contract/tool fingerprints inconsistent with working tree")
     require(packet["network"]=={
