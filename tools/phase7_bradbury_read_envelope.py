@@ -33,8 +33,25 @@ def normalize_legacy_gen_call_response(response):
     if type(data) is str:
         payload = data
     elif type(data) is dict:
-        if set(data) != {"status", "data"}:
-            raise BradburyReadMismatch("unrecognized gen_call result envelope")
+        # Public GenLayer Node gen_call includes execution metadata alongside
+        # status/data. Previous exact-key guard rejected SUCCESSFUL reads.
+        # Match the official node API v0.2.x response schema, not an invented
+        # two-field response. Fail closed on unknown or malformed metadata.
+        metadata = {
+            "eqOutputs": list, "stdout": str, "stderr": str,
+            "logs": list, "events": list, "messages": list,
+            "nondetDisagreementCallNo": (int, type(None)),
+        }
+        if not {"status", "data"}.issubset(data):
+            raise BradburyReadMismatch("missing gen_call status/data")
+        extra=set(data)-{"status", "data"}
+        if extra - set(metadata):
+            raise BradburyReadMismatch("unrecognized gen_call execution metadata")
+        for key in extra:
+            if not isinstance(data[key], metadata[key]) or (
+                key == "nondetDisagreementCallNo" and type(data[key]) is bool
+            ):
+                raise BradburyReadMismatch("malformed gen_call execution metadata")
         status = data["status"]
         if type(status) is not dict or type(status.get("code")) is not int or status["code"] != 0:
             raise BradburyReadMismatch("GenVM read was not successful")
