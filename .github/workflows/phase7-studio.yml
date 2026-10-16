@@ -56,6 +56,19 @@ jobs:
         run: |
           set -uo pipefail
           set +e # GitHub bash starts with -e; preserve test exit status for sanitized diagnosis
+          # The shared config also declares a Bradbury network and gltest
+          # resolves all configured environment placeholders at startup,
+          # even when --network localnet is selected. Generate disposable
+          # keys in-process for config parsing only; never persist or print.
+          export ACCOUNT_PRIVATE_KEY_1="$(python -c 'from eth_account import Account; print(Account.create().key.hex())')"
+          export ACCOUNT_PRIVATE_KEY_2="$(python -c 'from eth_account import Account; print(Account.create().key.hex())')"
+          python - <<'PY'
+          import os
+          from gltest_cli.config.user import load_user_config
+          assert all(os.environ.get(name) for name in ("ACCOUNT_PRIVATE_KEY_1", "ACCOUNT_PRIVATE_KEY_2"))
+          load_user_config("gltest.config.yaml")
+          print("STUDIO_CONFIG_VALIDATION_PASS")
+          PY
           gltest tests/test_studio_phase6_untrusted.py -v -s --network localnet > /tmp/se-studio-private.log 2>&1
           code=$?
           python - <<'PY'
