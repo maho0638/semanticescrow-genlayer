@@ -76,6 +76,7 @@ jobs:
           assert src.index("install_bradbury_v0216_dispatch(c)") < src.index("fac=get_contract_factory(")
           assert src.index("install_bradbury_v0216_dispatch(c)") < src.index("ok(send(con.create_deal")
           runner=Path("tools/phase7_bradbury_windows.py").read_text()
-          assert "NO GEN REQUESTED: pinned source fails real payable create_deal." in runner
+          assert "SE7_PUBLIC_CANONICAL_V0216_DISPATCH_PREFUNDING_PASS" in runner
+          assert runner.index("SE7_PUBLIC_CANONICAL_V0216_DISPATCH_PREFUNDING_PASS") < runner.index("SEND ONLY BRADBURY TEST GEN TO THIS NEW ADDRESS:")
           print("SE7_METHOD_FIX_NO_BLIND_GEN_RERUN_ALLOWED")
           PY
