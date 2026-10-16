@@ -16,7 +16,40 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 3
     steps:
+      - name: Official chain-only L2 RPC independent 4221 connection probe (no GEN)
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import urllib.request, urllib.error, json
+          url="https://rpc.testnet-chain.genlayer.com"
+          ghost="0x73dc7ee6f7406b01ef7d607f8d1a48a780afa12a"
+          for method,params in (("eth_chainId",[]),("eth_getBalance",[ghost,"latest"]),("eth_getCode",[ghost,"latest"])):
+              body=json.dumps({"jsonrpc":"2.0","id":1,"method":method,"params":params}).encode()
+              req=urllib.request.Request(url,data=body,headers={"Content-Type":"application/json"},method="POST")
+              try:
+                  with urllib.request.urlopen(req,timeout=15) as r: obj=json.load(r)
+              except urllib.error.HTTPError as ex:
+                  print("GENLAYER_L2_RPC_HTTP_BLOCK",ex.code,method,flush=True)
+                  raise SystemExit(2)
+              except Exception as ex:
+                  print("GENLAYER_L2_RPC_NETWORK_FAILURE",type(ex).__name__,method,flush=True)
+                  raise SystemExit(3)
+              if obj.get("error") or not isinstance(obj.get("result"),str):
+                  print("GENLAYER_L2_RPC_JSON_ERROR",method,flush=True)
+                  raise SystemExit(4)
+              res=obj["result"]
+              if method=="eth_chainId":
+                  assert int(res,16)==4221
+                  print("GENLAYER_L2_CHAIN_ID_PASS_4221",flush=True)
+              elif method=="eth_getBalance":
+                  print("GENLAYER_L2_GHOST_BALANCE_WEI",int(res,16),flush=True)
+              else:
+                  assert len(res)>2
+                  print("GENLAYER_L2_GHOST_BYTECODE_PASS",flush=True)
+          print("GENLAYER_L2_PUBLIC_RPC_ALL_READS_PASSED",flush=True)
+          PY
       - name: Public Bradbury 4221 RPC network probe - absolutely no wallet
+        continue-on-error: true
         shell: bash
         run: |
           python3 - <<'PY'
